@@ -5,11 +5,16 @@ module NextStation
     extend Forwardable
     def_delegators :@data, :[], :[]=, :fetch, :key?, :has_key?, :to_h, :merge, :merge!
 
-    attr_reader :context
+    attr_reader :context, :step_attempt
 
     def initialize(params = {}, context = {})
       @context = context.dup.freeze
       @data = { params: unwrap_params(params).dup }
+      @step_attempt = 1
+    end
+
+    def set_step_attempt(value)
+      @step_attempt = value
     end
 
     def params

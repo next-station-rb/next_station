@@ -176,14 +176,37 @@ module NextStation
       skip_condition = node.options[:skip_if]
       return state if skip_condition && skip_condition.call(state)
 
-      result = send(node.name, state)
+      retry_if = node.options[:retry_if]
+      max_attempts = node.options[:attempts] || 1
+      delay = node.options[:delay] || 0
+      attempts = 0
 
-      unless result.is_a?(NextStation::State)
-        class_name = self.class.name || "AnonymousOperation"
-        raise NextStation::StepReturnValueError, "Step '#{node.name}' in #{class_name} must return a NextStation::State object, but it returned #{result.class} (#{result.inspect})."
+      loop do
+        attempts += 1
+        state.set_step_attempt(attempts)
+        begin
+          result = send(node.name, state)
+
+          unless result.is_a?(NextStation::State)
+            class_name = self.class.name || "AnonymousOperation"
+            raise NextStation::StepReturnValueError, "Step '#{node.name}' in #{class_name} must return a NextStation::State object, but it returned #{result.class} (#{result.inspect})."
+          end
+
+          if retry_if && attempts < max_attempts && retry_if.call(result, nil)
+            sleep(delay) if delay > 0
+            next
+          end
+
+          return result
+        rescue => e
+          if retry_if && attempts < max_attempts && retry_if.call(state, e)
+            sleep(delay) if delay > 0
+            next
+          else
+            raise e
+          end
+        end
       end
-
-      result
     end
 
     def execute_branch(node, state)

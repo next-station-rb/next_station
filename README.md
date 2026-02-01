@@ -114,6 +114,40 @@ end
 
 Branches can be nested for complex flows.
 
+### Resilience (Retry Logic)
+
+Add resilience to flaky steps using `retry_if`, `attempts`, and `delay`:
+
+```ruby
+process do
+  step :call_external_api,
+       retry_if: ->(state, exception) { exception.is_a?(Timeout::Error) },
+       attempts: 3,
+       delay: 1
+end
+```
+
+The `retry_if` lambda receives both the current `state` and the `exception` (if any). It should return `true` if the step should be retried.
+
+You can also retry based on the state result even if no exception was raised:
+
+```ruby
+step :check_job_status,
+     retry_if: ->(state, _exception) { state[:job_status] == "pending" },
+     attempts: 5,
+     delay: 2
+```
+
+Inside a step, you can check the current attempt number using `state.step_attempt`:
+
+```ruby
+def call_external_api(state)
+  puts "Executing attempt number: #{state.step_attempt}"
+  # ...
+  state
+end
+```
+
 ## Railway Pattern & Errors
 
 NextStation supports the Railway pattern, allowing you to explicitly handle success and failure paths using a structured error DSL.
