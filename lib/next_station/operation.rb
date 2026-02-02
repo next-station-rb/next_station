@@ -80,7 +80,7 @@ module NextStation
     end
 
     def self.error_definitions
-      @error_definitions || {}
+      @error_definitions || (superclass.error_definitions if superclass.respond_to?(:error_definitions)) || {}
     end
 
     def self.result_at(key)
@@ -88,7 +88,31 @@ module NextStation
     end
 
     def self.result_key
-      @result_key
+      @result_key || (superclass.result_key if superclass.respond_to?(:result_key))
+    end
+
+    def self.result_schema(&block)
+      require "dry-struct"
+      @result_class = Class.new(Dry::Struct, &block)
+      @schema_enforced = true
+    end
+
+    def self.result_class
+      @result_class || (superclass.result_class if superclass.respond_to?(:result_class))
+    end
+
+    def self.enforce_result_schema
+      @schema_enforced = true
+    end
+
+    def self.disable_result_schema
+      @schema_enforced = false
+    end
+
+    def self.schema_enforced?
+      return @schema_enforced unless @schema_enforced.nil?
+      return superclass.schema_enforced? if superclass.respond_to?(:schema_enforced?)
+      false
     end
 
     def self.process(&block)
@@ -106,7 +130,7 @@ module NextStation
     end
 
     def self.steps
-      @root&.children || []
+      @root&.children || (superclass.steps if superclass.respond_to?(:steps)) || []
     end
 
     def call(params = {}, context = {})
@@ -146,7 +170,11 @@ module NextStation
                                                  "Operations must set this key or use result_at to specify another one."
       end
 
-      Result::Success.new(@state[key])
+      Result::Success.new(
+        @state[key],
+        schema: self.class.result_class,
+        enforced: self.class.schema_enforced?
+      )
     end
 
     def error!(type:, msg_keys: {}, details: {})

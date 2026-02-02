@@ -244,6 +244,80 @@ result.value # => <User instance>
 
 > **Note:** If the expected key (either `:result` or the one defined by `result_at`) is missing from the state at the end of the operation, a `NextStation::Error` will be raised. This ensures that you explicitly define the output of your operations.
 
+### Output Shapes (dry-struct)
+
+You can enforce the structure of the success result using the `result_schema` DSL, which leverages the `dry-struct` gem.
+
+```ruby
+class CreateUser < NextStation::Operation
+  result_at :user_data
+
+  result_schema do
+    attribute :id, NextStation::Types::Integer
+    attribute :email, NextStation::Types::String
+    attribute :address do
+      attribute :city,   NextStation::Types::String
+      attribute :street, NextStation::Types::String
+    end
+    attribute :metadata, NextStation::Types::Any
+  end
+
+  process do
+    step :set_data
+  end
+
+  def set_data(state)
+    state[:user_data] = {
+      id: 1,
+      email: "john@example.com",
+      address: { city: "NYC", street: "Main St" },
+      metadata: { foo: "bar" }
+    }
+    state
+  end
+end
+```
+
+#### Lazy Validation
+
+The result schema is applied **lazily**. Validation and coercion only occur when you call `result.value`.
+
+```ruby
+op = CreateUser.new.call(params)
+op.success? # => true (Operation finished without errors)
+
+# Validation happens now:
+op.value 
+# => #<CreateUser::ResultClass id=1 email="john@example.com" ...>
+
+# If the data doesn't match the schema:
+# => raises NextStation::ResultShapeError
+```
+
+#### Enabling/Disabling Enforcement
+
+By default, enforcement is enabled if a `result_schema` is defined. You can explicitly control this behavior:
+
+```ruby
+class CreateUser < NextStation::Operation
+  result_schema do
+    # ...
+  end
+
+  # Force enforcement (default if schema is present)
+  enforce_result_schema 
+
+  # Disable enforcement (result.value will return the raw hash)
+  disable_result_schema
+end
+```
+
+> **Note:** If `enforce_result_schema` is enabled but no `result_schema` is defined (either in the class or its ancestors), calling `result.value` will raise a `NextStation::Error`.
+
+#### Types
+
+You can use all standard dry-types via `NextStation::Types`.
+
 ## License
 
 TBD

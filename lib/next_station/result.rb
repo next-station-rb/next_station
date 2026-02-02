@@ -17,10 +17,25 @@ module NextStation
     end
 
     class Success < Result
-      attr_reader :value
+      def initialize(value, schema: nil, enforced: false)
+        @raw_value = value
+        @schema = schema
+        @enforced = enforced
+        @validated_value = nil
+      end
 
-      def initialize(value)
-        @value = value
+      def value
+        if @enforced && @schema.nil?
+          raise NextStation::Error, "Result schema enforcement is enabled but no result_schema is defined."
+        end
+
+        return @raw_value unless @enforced && @schema
+
+        @validated_value ||= begin
+          @schema.new(@raw_value)
+        rescue => e
+          raise NextStation::ResultShapeError, e.message
+        end
       end
 
       def success?

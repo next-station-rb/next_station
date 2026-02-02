@@ -12,11 +12,20 @@
     <orderEntry type="jdk" jdkName="rbenv: 4.0.1" jdkType="RUBY_SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="PROVIDED" name="ast (v2.4.3, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="bigdecimal (v4.0.1, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="bundler (v4.0.5, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="concurrent-ruby (v1.3.6, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="diff-lcs (v1.6.2, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="dry-core (v1.2.0, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="dry-inflector (v1.3.1, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="dry-logic (v1.6.0, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="dry-struct (v1.8.0, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="dry-types (v1.9.0, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="ice_nine (v0.11.2, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="json (v2.18.0, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="language_server-protocol (v3.17.0.5, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="lint_roller (v1.1.0, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="logger (v1.7.0, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="parallel (v1.27.0, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="parser (v3.3.10.1, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="prism (v1.9.0, rbenv: 4.0.1) [gem]" level="application" />
@@ -33,5 +42,6 @@
     <orderEntry type="library" scope="PROVIDED" name="ruby-progressbar (v1.13.0, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="unicode-display_width (v3.2.0, rbenv: 4.0.1) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="unicode-emoji (v4.2.0, rbenv: 4.0.1) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="zeitwerk (v2.7.4, rbenv: 4.0.1) [gem]" level="application" />
   </component>
 </module>
