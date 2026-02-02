@@ -2,4 +2,3 @@ DONE - Force return of state inside the defs
 DONE - Custom Error class for state not set: spec/contract/basic_flows/success_should_return_exception_if_no_success_key_spec.rb
 TODO - install rubocop?
 TODO - Raise exception if a step does not have a "def",
-TODO - The way to get into the params in "state.params", with "state[:params]" returns nil. Check if it's a bug or a feature.
