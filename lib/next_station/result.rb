@@ -56,13 +56,14 @@ module NextStation
     end
 
     class Error
-      attr_reader :type, :message, :help_url, :details
+      attr_reader :type, :message, :help_url, :details, :msg_keys
 
-      def initialize(type:, message: nil, help_url: nil, details: {})
+      def initialize(type:, message: nil, help_url: nil, details: {}, msg_keys: {})
         @type = type
         @message = message
         @help_url = help_url
         @details = details
+        @msg_keys = msg_keys
       end
     end
   end

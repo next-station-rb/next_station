@@ -246,6 +246,53 @@ class MyOp < BaseOp
 end
 ```
 
+## Nested Operations (Operation Composition)
+
+Operations can invoke other operations using the `call_operation` helper. This maintains the Railway pattern, shares context (e.g., `current_user`, `lang`), and handles error propagation automatically.
+
+```ruby
+class SyncUser < NextStation::Operation
+  depends remote_op: -> { RemoteOp.new }
+
+  errors do
+    error_type :provider_error do
+      message en: "External Sync Failed: %{reason}"
+    end
+  end
+
+  process do
+    step :fetch_remote_data
+    step :other_step
+  end
+
+  def fetch_remote_data(state)
+    # 1. Automatically shares context (state.context)
+    # 2. Dynamic params via Proc (or pass a Hash directly)
+    # 3. Results stored in state[:remote_profile]
+    # 4. If RemoteOp fails with :provider_error, this step halts and 
+    #    the parent returns its own template for :provider_error.
+    call_operation(
+      state, 
+      dependency(:remote_op), 
+      with_params: ->(s) { { uid: s.params[:id] } },
+      store_result_in_key: :remote_profile
+    )
+  end
+
+  def other_step(state)
+    state[:remote_profile] # Access the result from the child operation
+    state
+  end
+end
+```
+
+### Error Propagation Rules
+
+- **Mapped Error**: If the Parent Operation has a matching `error_type` defined, it "intercepts" the failure. The resulting error uses the Parent's message template but is populated with the Child's `msg_keys` and `details`.
+- **Transparent Error**: If the Parent has NOT defined that error type, the child's `Error` object is propagated exactly as is (including its already resolved message).
+
+The `call_operation` helper triggers the internal Halt mechanism, allowing parent step controls like `retry_if` to function as expected.
+
 ## Advanced Usage
 
 ### Result Value and `result_at`

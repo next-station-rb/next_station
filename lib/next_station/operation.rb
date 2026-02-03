@@ -1,11 +1,13 @@
 module NextStation
   class Operation
     class Halt < StandardError
-      attr_reader :type, :msg_keys, :details
-      def initialize(type:, msg_keys: {}, details: {})
+      attr_reader :type, :msg_keys, :details, :error
+
+      def initialize(type: nil, msg_keys: {}, details: {}, error: nil)
         @type = type
         @msg_keys = msg_keys
         @details = details
+        @error = error
       end
     end
 
@@ -164,6 +166,8 @@ module NextStation
       begin
         @state = execute_nodes(self.class.steps, @state)
       rescue Halt => e
+        return Result::Failure.new(e.error) if e.error
+
         definition = self.class.error_definitions[e.type]
         raise "Undeclared error type: #{e.type}" unless definition
 
@@ -173,7 +177,8 @@ module NextStation
             type: e.type,
             message: message,
             help_url: definition.help_url,
-            details: e.details
+            details: e.details,
+            msg_keys: e.msg_keys
           )
         )
       rescue NextStation::Error => e
@@ -203,6 +208,34 @@ module NextStation
 
     def error!(type:, msg_keys: {}, details: {})
       raise Halt.new(type: type, msg_keys: msg_keys, details: details)
+    end
+
+    def call_operation(state, operation_class, with_params:, store_result_in_key: nil)
+      params = with_params.is_a?(Proc) ? with_params.call(state) : with_params
+
+      operation = if operation_class.is_a?(Class)
+                    operation_class.new(deps: @injected_deps)
+                  else
+                    operation_class
+                  end
+
+      result = operation.call(params, state.context)
+
+      if result.success?
+        state[store_result_in_key] = result.value if store_result_in_key
+        state
+      else
+        child_error = result.error
+        if self.class.error_definitions.key?(child_error.type)
+          error!(
+            type: child_error.type,
+            msg_keys: child_error.msg_keys,
+            details: child_error.details
+          )
+        else
+          raise Halt.new(error: child_error)
+        end
+      end
     end
 
     private

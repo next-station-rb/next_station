@@ -3,7 +3,7 @@ require_relative "lib/next_station/version"
 Gem::Specification.new do |spec|
   spec.name          = "next_station"
   spec.version       = NextStation::VERSION
-  spec.authors       = ["TODO: Write your name"]
+  spec.authors       = ['Hugo Vilchis']
   spec.email         = ["TODO: Write your email address"]
 
   spec.summary       = "TODO: Write a short summary, because RubyGems requires one."
