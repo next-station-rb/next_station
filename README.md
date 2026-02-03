@@ -196,6 +196,56 @@ result.error.message # => "El correo taken@example.com ya existe"
 
 If the requested language is not defined, it defaults to `:en`.
 
+## Dependency Injection
+
+NextStation includes a lightweight Dependency Injection (DI) system to help you decouple your operations from their external dependencies.
+
+### Declaring Dependencies
+
+Use the `depends` method to declare dependencies and their defaults. Defaults can be static values or lazy lambdas:
+
+```ruby
+class CreateUser < NextStation::Operation
+  depends mailer: -> { Mailer.new },
+          repository: UserRepository.new
+
+  process do
+    step :send_welcome_email
+  end
+
+  def send_welcome_email(state)
+    # Access dependencies using the dependency() method
+    dependency(:mailer).send_welcome(state.params[:email])
+    state
+  end
+end
+```
+
+### Injecting Dependencies
+
+You can override the default dependencies when instantiating the operation by passing the `deps:` keyword argument:
+
+```ruby
+# In your tests
+mock_mailer = double("Mailer")
+operation = CreateUser.new(deps: { mailer: mock_mailer })
+operation.call(email: "test@example.com")
+```
+
+### Inheritance
+
+Dependencies are inherited and can be overridden in subclasses:
+
+```ruby
+class BaseOp < NextStation::Operation
+  depends logger: Logger.new
+end
+
+class MyOp < BaseOp
+  depends logger: CustomLogger.new # Overrides parent dependency
+end
+```
+
 ## Advanced Usage
 
 ### Result Value and `result_at`

@@ -133,6 +133,30 @@ module NextStation
       @root&.children || (superclass.steps if superclass.respond_to?(:steps)) || []
     end
 
+    def self.depends(deps)
+      @dependencies = dependencies.merge(deps)
+    end
+
+    def self.dependencies
+      @dependencies || (superclass.respond_to?(:dependencies) ? superclass.dependencies : {})
+    end
+
+    def initialize(deps: {})
+      @injected_deps = deps
+      @resolved_deps = {}
+    end
+
+    def dependency(name)
+      return @resolved_deps[name] if @resolved_deps.key?(name)
+
+      if @injected_deps.key?(name)
+        @resolved_deps[name] = @injected_deps[name]
+      else
+        default = self.class.dependencies.fetch(name)
+        @resolved_deps[name] = default.is_a?(Proc) ? default.call : default
+      end
+    end
+
     def call(params = {}, context = {})
       @state = State.new(params, context)
       lang = context[:lang] || :en
