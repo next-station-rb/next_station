@@ -196,6 +196,85 @@ result.error.message # => "El correo taken@example.com ya existe"
 
 If the requested language is not defined, it defaults to `:en`.
 
+## Input Validation (dry-validation)
+
+NextStation integrates with `dry-validation` to provide powerful input guarding and coercion.
+
+### Defining a Contract
+
+Use `validate_with` to define your validation rules. You can use a block to define the contract inline, or pass an
+existing contract class.
+
+```ruby
+
+class CreateUser < NextStation::Operation
+  # Define the contract inline
+  validate_with do
+    params do
+      required(:email).filled(:string, format?: /@/)
+      required(:age).filled(:integer, gteq?: 18)
+    end
+  end
+
+  process do
+    step :validation # Explicitly run the validation
+    step :persist
+  end
+
+  def persist(state)
+    # state.params now contains COERCED values (e.g., age is an Integer)
+    User.create!(state.params)
+    state
+  end
+end
+```
+
+### The :validation Step
+
+Validation is NOT automatic. You must explicitly add `step :validation` in your `process` block.
+
+- **Failure**: If validation fails, the operation halts immediately and returns a `Result::Failure` with type
+  `:validation`.
+- **Details**: `result.error.details` contains the raw error hash from `dry-validation`.
+- **Coercion**: On success, `state.params` is updated with the coerced and filtered values from the validation result.
+
+### Customizing Validation Errors
+
+You can override the default validation error message using the `errors` DSL:
+
+```ruby
+
+class UpdateProfile < NextStation::Operation
+  errors do
+    error_type :validation do
+      message en: "The provided data is invalid: %{errors}",
+              sp: "Los datos son inválidos: %{errors}"
+    end
+  end
+
+  validate_with do
+    # ...
+  end
+  process { step :validation }
+end
+```
+
+If no custom message is defined, NextStation uses a default message: "One or more parameters are invalid. See validation
+details." (available in English and Spanish).
+
+### Localization
+
+NextStation automatically passes the `lang` from the context (e.g., `call(params, { lang: :sp })`) to the
+`dry-validation` contract. To use this, ensure `dry-validation` is configured to use I18n.
+
+### Validation Enforcement
+
+By default, if you define `validate_with`, the validation is considered enabled.
+
+- **force_validation!**: Ensures that `step :validation` is present in the `process` block. If missing, calling the
+  operation will raise a `NextStation::ValidationError`.
+- **skip_validation!**: Disables the validation check even if `step :validation` is present.
+
 ## Dependency Injection
 
 NextStation includes a lightweight Dependency Injection (DI) system to help you decouple your operations from their external dependencies.

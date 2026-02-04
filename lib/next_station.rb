@@ -11,6 +11,9 @@ module NextStation
 
   # Raised when the result does not match the defined schema.
   class ResultShapeError < Error; end
+
+  # Raised when there is a configuration error related to validations.
+  class ValidationError < Error; end
 end
 
 require_relative "next_station/version"

@@ -1,4 +1,4 @@
 DONE - Force return of state inside the defs
 DONE - Custom Error class for state not set: spec/contract/basic_flows/success_should_return_exception_if_no_success_key_spec.rb
-TODO - install rubocop?
+DONE - install rubocop?
 TODO - Raise exception if a step does not have a "def",

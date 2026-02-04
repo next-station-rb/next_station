@@ -4,6 +4,7 @@ PATH
     next_station (0.1.0)
       dry-struct
       dry-types
+      dry-validation
 
 GEM
   remote: https://rubygems.org/
@@ -12,15 +13,27 @@ GEM
     bigdecimal (4.0.1)
     concurrent-ruby (1.3.6)
     diff-lcs (1.6.2)
+    dry-configurable (1.3.0)
+      dry-core (~> 1.1)
+      zeitwerk (~> 2.6)
     dry-core (1.2.0)
       concurrent-ruby (~> 1.0)
       logger
       zeitwerk (~> 2.6)
     dry-inflector (1.3.1)
+    dry-initializer (3.2.0)
     dry-logic (1.6.0)
       bigdecimal
       concurrent-ruby (~> 1.0)
       dry-core (~> 1.1)
+      zeitwerk (~> 2.6)
+    dry-schema (1.15.0)
+      concurrent-ruby (~> 1.0)
+      dry-configurable (~> 1.0, >= 1.0.1)
+      dry-core (~> 1.1)
+      dry-initializer (~> 3.2)
+      dry-logic (~> 1.6)
+      dry-types (~> 1.8)
       zeitwerk (~> 2.6)
     dry-struct (1.8.0)
       dry-core (~> 1.1)
@@ -33,6 +46,12 @@ GEM
       dry-core (~> 1.0)
       dry-inflector (~> 1.0)
       dry-logic (~> 1.4)
+      zeitwerk (~> 2.6)
+    dry-validation (1.11.1)
+      concurrent-ruby (~> 1.0)
+      dry-core (~> 1.1)
+      dry-initializer (~> 3.2)
+      dry-schema (~> 1.14)
       zeitwerk (~> 2.6)
     ice_nine (0.11.2)
     json (2.18.0)
@@ -94,11 +113,15 @@ CHECKSUMS
   bigdecimal (4.0.1) sha256=8b07d3d065a9f921c80ceaea7c9d4ae596697295b584c296fe599dd0ad01c4a7
   concurrent-ruby (1.3.6) sha256=6b56837e1e7e5292f9864f34b69c5a2cbc75c0cf5338f1ce9903d10fa762d5ab
   diff-lcs (1.6.2) sha256=9ae0d2cba7d4df3075fe8cd8602a8604993efc0dfa934cff568969efb1909962
+  dry-configurable (1.3.0) sha256=882d862858567fc1210d2549d4c090f34370fc1bb7c5c1933de3fe792e18afa8
   dry-core (1.2.0) sha256=0cc5a7da88df397f153947eeeae42e876e999c1e30900f3c536fb173854e96a1
   dry-inflector (1.3.1) sha256=7fb0c2bb04f67638f25c52e7ba39ab435d922a3a5c3cd196120f63accb682dcc
+  dry-initializer (3.2.0) sha256=37d59798f912dc0a1efe14a4db4a9306989007b302dcd5f25d0a2a20c166c4e3
   dry-logic (1.6.0) sha256=da6fedbc0f90fc41f9b0cc7e6f05f5d529d1efaef6c8dcc8e0733f685745cea2
+  dry-schema (1.15.0) sha256=0f2a34adba4206bd6d46ec1b6b7691b402e198eecaff1d8349a7d48a77d82cd2
   dry-struct (1.8.0) sha256=74c38b559924fb6462ac43ec780c4533a082d7b1d238a8d7857b773b3b8e2966
   dry-types (1.9.0) sha256=7b656fe0a78d2432500ae1f29fefd6762f5a032ca7000e4f36bc111453d45d4d
+  dry-validation (1.11.1) sha256=70900bb5a2d911c8aab566d3e360c6bff389b8bf92ea8e04885ce51c41ff8085
   ice_nine (0.11.2) sha256=5d506a7d2723d5592dc121b9928e4931742730131f22a1a37649df1c1e2e63db
   json (2.18.0) sha256=b10506aee4183f5cf49e0efc48073d7b75843ce3782c68dbeb763351c08fd505
   language_server-protocol (3.17.0.5) sha256=fd1e39a51a28bf3eec959379985a72e296e9f9acfce46f6a79d31ca8760803cc

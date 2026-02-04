@@ -78,11 +78,24 @@ module NextStation
     def self.errors(&block)
       dsl = ErrorsDSL.new
       dsl.instance_eval(&block)
-      @error_definitions = dsl.definitions
+      @error_definitions ||= {}
+      @error_definitions.merge!(dsl.definitions)
     end
 
     def self.error_definitions
-      @error_definitions || (superclass.error_definitions if superclass.respond_to?(:error_definitions)) || {}
+      parent_defs = if superclass.respond_to?(:error_definitions)
+                      superclass.error_definitions
+                    else
+                      {}
+                    end
+      parent_defs.merge(@error_definitions || {})
+    end
+
+    errors do
+      error_type :validation do
+        message en: "One or more parameters are invalid. See validation details.",
+                sp: "Uno o más parámetros son inválidos. Ver detalles de validación."
+      end
     end
 
     def self.result_at(key)
@@ -135,6 +148,45 @@ module NextStation
       @root&.children || (superclass.steps if superclass.respond_to?(:steps)) || []
     end
 
+    def self.validate_with(contract_or_block = nil, &block)
+      require "dry-validation"
+      @validation_contract_class = if block_given?
+                                     Class.new(Dry::Validation::Contract, &block)
+                                   elsif contract_or_block.is_a?(Class) && contract_or_block < Dry::Validation::Contract
+                                     contract_or_block
+                                   else
+                                     raise ValidationError, "validate_with requires a block or a Dry::Validation::Contract class"
+                                   end
+      @validation_enforced = true
+    end
+
+    def self.validation_contract_class
+      @validation_contract_class || (superclass.validation_contract_class if superclass.respond_to?(:validation_contract_class))
+    end
+
+    def self.validation_contract_instance
+      @validation_contract_instance ||= validation_contract_class&.new
+    end
+
+    def self.force_validation!
+      @validation_enforced = true
+    end
+
+    def self.skip_validation!
+      @validation_enforced = false
+    end
+
+    def self.validation_enforced?
+      return @validation_enforced unless @validation_enforced.nil?
+      superclass.respond_to?(:validation_enforced?) ? superclass.validation_enforced? : false
+    end
+
+    def self.has_step?(name, nodes = steps)
+      nodes.any? do |node|
+        node.name == name || (node.type == :branch && has_step?(name, node.children))
+      end
+    end
+
     def self.depends(deps)
       @dependencies = dependencies.merge(deps)
     end
@@ -160,6 +212,10 @@ module NextStation
     end
 
     def call(params = {}, context = {})
+      if self.class.validation_enforced? && !self.class.has_step?(:validation)
+        raise ValidationError, "Validation is enforced but step :validation is missing from process block"
+      end
+
       @state = State.new(params, context)
       lang = context[:lang] || :en
 
@@ -181,6 +237,8 @@ module NextStation
             msg_keys: e.msg_keys
           )
         )
+      rescue NextStation::ValidationError => e
+        raise e
       rescue NextStation::Error => e
         raise e
       rescue => e
@@ -204,6 +262,39 @@ module NextStation
         schema: self.class.result_class,
         enforced: self.class.schema_enforced?
       )
+    end
+
+    def validation(state)
+      contract_class = self.class.validation_contract_class
+      unless contract_class
+        raise ValidationError, "Step :validation called but no contract defined via validate_with"
+      end
+
+      return state unless self.class.validation_enforced?
+
+      contract = self.class.validation_contract_instance
+      result = contract.call(state.params)
+
+      if result.success?
+        state[:params] = result.to_h
+        state
+      else
+        lang = state.context[:lang] || :en
+
+        # Attempt to get localized errors from dry-validation, fallback to default if it fails
+        # (e.g. if I18n is not configured for that language in dry-validation)
+        validation_errors = begin
+                              result.errors(locale: lang).to_h
+                            rescue StandardError
+                              result.errors.to_h
+                            end
+
+        error!(
+          type: :validation,
+          msg_keys: { errors: validation_errors }.merge(state.params),
+          details: result.errors.to_h
+        )
+      end
     end
 
     def error!(type:, msg_keys: {}, details: {})
