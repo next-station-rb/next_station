@@ -205,8 +205,9 @@ NextStation integrates with `dry-validation` to provide powerful input guarding 
 Use `validate_with` to define your validation rules. You can use a block to define the contract inline, or pass an
 existing contract class.
 
-```ruby
+#### Inline Contract
 
+```ruby
 class CreateUser < NextStation::Operation
   # Define the contract inline
   validate_with do
@@ -224,6 +225,33 @@ class CreateUser < NextStation::Operation
   def persist(state)
     # state.params now contains COERCED values (e.g., age is an Integer)
     User.create!(state.params)
+    state
+  end
+end
+```
+
+#### External Contract
+
+You can also pass an existing `Dry::Validation::Contract` class.
+
+```ruby
+
+class MyExternalContract < Dry::Validation::Contract
+  params do
+    required(:token).filled(:string)
+  end
+end
+
+class Authenticate < NextStation::Operation
+  validate_with MyExternalContract
+
+  process do
+    step :validation
+    step :authorize
+  end
+
+  def authorize(state)
+    # state.params[:token] is available here
     state
   end
 end
@@ -266,6 +294,31 @@ details." (available in English and Spanish).
 
 NextStation automatically passes the `lang` from the context (e.g., `call(params, { lang: :sp })`) to the
 `dry-validation` contract. To use this, ensure `dry-validation` is configured to use I18n.
+
+```ruby
+# 1. Load the I18n extension (usually in an initializer)
+require "dry-validation"
+Dry::Validation.load_extensions(:i18n)
+
+class UpdateProfile < NextStation::Operation
+  validate_with do
+    # 2. Configure the contract to use I18n
+    config.messages.backend = :i18n
+
+    params do
+      required(:name).filled(:string)
+    end
+  end
+
+  process { step :validation }
+end
+
+# 3. Pass the desired language in the context
+result = UpdateProfile.new.call({ name: "" }, { lang: :sp })
+
+# result.error.details will contain the localized messages from dry-validation
+# => { name: ["no puede estar vacío"] }
+```
 
 ### Validation Enforcement
 
