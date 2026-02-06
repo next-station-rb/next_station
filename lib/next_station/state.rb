@@ -1,4 +1,6 @@
-require "forwardable"
+# frozen_string_literal: true
+
+require 'forwardable'
 
 module NextStation
   # Holds the mutable state during operation execution.

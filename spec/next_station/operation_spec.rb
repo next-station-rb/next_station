@@ -1,4 +1,6 @@
-require "spec_helper"
+# frozen_string_literal: true
+
+require 'spec_helper'
 
 RSpec.describe NextStation::Operation do
   let(:test_operation_class) do
@@ -24,27 +26,27 @@ RSpec.describe NextStation::Operation do
 
   let(:operation) { test_operation_class.new }
 
-  describe ".process" do
-    it "registers steps" do
-      expect(test_operation_class.steps.map(&:name)).to eq([:first_step, :second_step])
+  describe '.process' do
+    it 'registers steps' do
+      expect(test_operation_class.steps.map(&:name)).to eq(%i[first_step second_step])
     end
   end
 
-  describe ".result_at" do
-    it "sets the result key" do
+  describe '.result_at' do
+    it 'sets the result key' do
       expect(test_operation_class.result_key).to eq(:final_data)
     end
   end
 
-  describe "#call" do
-    it "executes steps in order and returns the result at specified key" do
-      result = operation.call(some_param: "value")
+  describe '#call' do
+    it 'executes steps in order and returns the result at specified key' do
+      result = operation.call(some_param: 'value')
 
       expect(result).to be_success
       expect(result.value).to eq({ success: true })
     end
 
-    it "passes params and context to the state" do
+    it 'passes params and context to the state' do
       op_class = Class.new(NextStation::Operation) do
         result_at :res
         process { step :check_state }
@@ -61,20 +63,20 @@ RSpec.describe NextStation::Operation do
       expect(result.value[:context_ok]).to be true
     end
 
-    context "when no result_at is specified" do
-      it "returns the value at :result key" do
+    context 'when no result_at is specified' do
+      it 'returns the value at :result key' do
         op_class = Class.new(NextStation::Operation) do
           process { step :work }
           def work(state)
-            state[:result] = "Done"
+            state[:result] = 'Done'
             state
           end
         end
         result = op_class.new.call
-        expect(result.value).to eq("Done")
+        expect(result.value).to eq('Done')
       end
 
-      it "raises error if :result key is missing" do
+      it 'raises error if :result key is missing' do
         op_class = Class.new(NextStation::Operation) do
           process { step :work }
           def work(state)
@@ -86,21 +88,21 @@ RSpec.describe NextStation::Operation do
       end
     end
 
-    context "when a step fails" do
+    context 'when a step fails' do
       let(:failing_op_class) do
         Class.new(NextStation::Operation) do
           process { step :fail_now }
-          def fail_now(state)
-            raise "Boom!"
+          def fail_now(_state)
+            raise 'Boom!'
           end
         end
       end
 
-      it "returns a failure result with error details" do
+      it 'returns a failure result with error details' do
         result = failing_op_class.new.call
         expect(result).to be_failure
         expect(result.error.type).to eq(:exception)
-        expect(result.error.message).to eq("Boom!")
+        expect(result.error.message).to eq('Boom!')
         expect(result.error.details[:backtrace]).not_to be_empty
       end
     end

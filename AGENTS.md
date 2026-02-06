@@ -43,7 +43,9 @@ Avoid forcing abstractions when they introduce unnecessary complexity, excessive
 - A new developer should be able to quickly understand the intent of the code.
 - Use clear and descriptive names for classes, methods, and variables.
 - Avoid comments that explain what the code does; the code should be self-explanatory.  
-  Comments should explain why a decision was made when it is not obvious.
+- Comments should explain why a decision was made when it is not obvious.
+- Yardoc comments are encouraged for public API. Must be updated to stay in sync with the current behavior if you
+  change that portion of the code.
 
 ## 3. RuboCop Conventions
 
@@ -56,7 +58,6 @@ Avoid forcing abstractions when they introduce unnecessary complexity, excessive
 In such cases:
 - The decision must be deliberate and justified.
 - Prefer disabling rules locally (`# rubocop:disable`) rather than globally.
-- Briefly document the reason when it is not obvious.
 
 ## 4. Thread Safety
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # NextStation is a lightweight, service-object like framework for Ruby
 # that emphasizes structured operations, railway-oriented programming,
 # and strong validation.
@@ -19,8 +21,8 @@ module NextStation
   class ValidationError < Error; end
 end
 
-require_relative "next_station/version"
-require_relative "next_station/types"
-require_relative "next_station/state"
-require_relative "next_station/result"
-require_relative "next_station/operation"
+require_relative 'next_station/version'
+require_relative 'next_station/types'
+require_relative 'next_station/state'
+require_relative 'next_station/result'
+require_relative 'next_station/operation'

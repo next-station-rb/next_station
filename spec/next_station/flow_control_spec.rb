@@ -1,6 +1,8 @@
-require "spec_helper"
+# frozen_string_literal: true
 
-RSpec.describe "Flow Control" do
+require 'spec_helper'
+
+RSpec.describe 'Flow Control' do
   let(:operation_class) do
     Class.new(NextStation::Operation) do
       process do
@@ -43,35 +45,35 @@ RSpec.describe "Flow Control" do
 
   let(:operation) { operation_class.new }
 
-  it "skips a step if skip_if condition is met" do
+  it 'skips a step if skip_if condition is met' do
     result = operation.call(do_not_contact: true)
     expect(result.value[:normalized]).to be true
     expect(result.value[:notified]).to be_nil
     expect(result.value[:finished]).to be true
   end
 
-  it "executes a step if skip_if condition is not met" do
+  it 'executes a step if skip_if condition is not met' do
     result = operation.call(do_not_contact: false)
     expect(result.value[:normalized]).to be true
     expect(result.value[:notified]).to be true
     expect(result.value[:finished]).to be true
   end
 
-  it "executes branch steps if branch condition is met" do
+  it 'executes branch steps if branch condition is met' do
     result = operation.call(is_admin: true)
     expect(result.value[:admin_granted]).to be true
     expect(result.value[:ops_emailed]).to be true
     expect(result.value[:finished]).to be true
   end
 
-  it "skips branch steps if branch condition is not met" do
+  it 'skips branch steps if branch condition is not met' do
     result = operation.call(is_admin: false)
     expect(result.value[:admin_granted]).to be_nil
     expect(result.value[:ops_emailed]).to be_nil
     expect(result.value[:finished]).to be true
   end
 
-  it "supports nested branching (bonus/robustness check)" do
+  it 'supports nested branching (bonus/robustness check)' do
     nested_op_class = Class.new(NextStation::Operation) do
       process do
         branch ->(s) { s.params[:level1] } do
@@ -83,9 +85,20 @@ RSpec.describe "Flow Control" do
         step :finish
       end
 
-      def step1(state); state[:s1] = true; state; end
-      def step2(state); state[:s2] = true; state; end
-      def finish(state); state[:result] = state.to_h; state; end
+      def step1(state)
+        state[:s1] = true
+        state
+      end
+
+      def step2(state)
+        state[:s2] = true
+        state
+      end
+
+      def finish(state)
+        state[:result] = state.to_h
+        state
+      end
     end
 
     expect(nested_op_class.new.call(level1: true, level2: true).value[:s2]).to be true

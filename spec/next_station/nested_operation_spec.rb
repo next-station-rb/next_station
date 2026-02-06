@@ -1,11 +1,13 @@
-require "spec_helper"
+# frozen_string_literal: true
 
-RSpec.describe "Nested Operations" do
+require 'spec_helper'
+
+RSpec.describe 'Nested Operations' do
   let(:child_op_class) do
     Class.new(NextStation::Operation) do
       errors do
         error_type :child_error do
-          message en: "Child error with key: %{key}"
+          message en: 'Child error with key: %<key>s'
         end
       end
 
@@ -15,7 +17,7 @@ RSpec.describe "Nested Operations" do
 
       def process_child(state)
         if state.params[:fail]
-          error!(type: :child_error, msg_keys: { key: state.params[:key] }, details: { some: "detail" })
+          error!(type: :child_error, msg_keys: { key: state.params[:key] }, details: { some: 'detail' })
         end
         state[:result] = "Child success: #{state.context[:current_user]}"
         state
@@ -30,7 +32,7 @@ RSpec.describe "Nested Operations" do
 
       errors do
         error_type :child_error do
-          message en: "Parent intercepted: %{key}"
+          message en: 'Parent intercepted: %<key>s'
         end
       end
 
@@ -49,46 +51,47 @@ RSpec.describe "Nested Operations" do
     end
   end
 
-  describe "#call_operation" do
-    it "shares context with the child operation" do
-      result = parent_op_class.new.call({ fail_child: false }, { current_user: "Alice" })
+  describe '#call_operation' do
+    it 'shares context with the child operation' do
+      result = parent_op_class.new.call({ fail_child: false }, { current_user: 'Alice' })
       expect(result).to be_success
-      expect(result.value).to eq("Child success: Alice")
+      expect(result.value).to eq('Child success: Alice')
     end
 
-    it "stores result in specified key" do
-      result = parent_op_class.new.call({ fail_child: false }, { current_user: "Alice" })
-      expect(result.value).to eq("Child success: Alice")
+    it 'stores result in specified key' do
+      result = parent_op_class.new.call({ fail_child: false }, { current_user: 'Alice' })
+      expect(result.value).to eq('Child success: Alice')
     end
 
-    it "intercepts error when parent defines the same error type" do
-      result = parent_op_class.new.call({ fail_child: true, key: "secret" })
+    it 'intercepts error when parent defines the same error type' do
+      result = parent_op_class.new.call({ fail_child: true, key: 'secret' })
       expect(result).to be_failure
       expect(result.error.type).to eq(:child_error)
-      expect(result.error.message).to eq("Parent intercepted: secret")
-      expect(result.error.msg_keys).to eq({ key: "secret" })
-      expect(result.error.details).to eq({ some: "detail" })
+      expect(result.error.message).to eq('Parent intercepted: secret')
+      expect(result.error.msg_keys).to eq({ key: 'secret' })
+      expect(result.error.details).to eq({ some: 'detail' })
     end
 
-    it "propagates error transparently when parent does NOT define the error type" do
+    it 'propagates error transparently when parent does NOT define the error type' do
       klass = child_op_class
       parent_no_intercept = Class.new(NextStation::Operation) do
         result_at :child_output
         process { step :call_child }
         define_method :call_child do |state|
-          call_operation(state, klass, with_params: { fail: true, key: "raw" }, store_result_in_key: :child_output)
+          call_operation(state, klass, with_params: { fail: true, key: 'raw' }, store_result_in_key: :child_output)
         end
       end
 
       result = parent_no_intercept.new.call
-      expect(result.error&.type).to eq(:child_error), "Expected :child_error but got #{result.error&.type}: #{result.error&.message}"
-      expect(result.error.message).to eq("Child error with key: raw")
-      expect(result.error.msg_keys).to eq({ key: "raw" })
+      expect(result.error&.type).to eq(:child_error),
+                                    "Expected :child_error but got #{result.error&.type}: #{result.error&.message}"
+      expect(result.error.message).to eq('Child error with key: raw')
+      expect(result.error.msg_keys).to eq({ key: 'raw' })
     end
 
-    it "supports dependency injection propagation" do
+    it 'supports dependency injection propagation' do
       child_with_di = Class.new(NextStation::Operation) do
-        depends repo: -> { "default_repo" }
+        depends repo: -> { 'default_repo' }
         process { step :check_di }
         def check_di(state)
           state[:result] = dependency(:repo)
@@ -105,13 +108,13 @@ RSpec.describe "Nested Operations" do
       end
 
       # Test default DI
-      expect(parent_op.new.call.value).to eq("default_repo")
+      expect(parent_op.new.call.value).to eq('default_repo')
 
       # Test injected DI
-      expect(parent_op.new(deps: { repo: "mock_repo" }).call.value).to eq("mock_repo")
+      expect(parent_op.new(deps: { repo: 'mock_repo' }).call.value).to eq('mock_repo')
     end
 
-    it "works with already instantiated operations" do
+    it 'works with already instantiated operations' do
       child_instance = child_op_class.new
       parent_op = Class.new(NextStation::Operation) do
         result_at :res
@@ -121,28 +124,29 @@ RSpec.describe "Nested Operations" do
         end
       end
 
-      result = parent_op.new.call({}, { current_user: "Bob" })
-      expect(result.value).to eq("Child success: Bob")
+      result = parent_op.new.call({}, { current_user: 'Bob' })
+      expect(result.value).to eq('Child success: Bob')
     end
 
-    it "triggers Halt mechanism so parent retry_if can catch it" do
+    it 'triggers Halt mechanism so parent retry_if can catch it' do
       child_failing = Class.new(NextStation::Operation) do
-        errors { error_type(:fail) { message en: "Fail" } }
+        errors { error_type(:fail) { message en: 'Fail' } }
         process { step :always_fail }
-        def always_fail(state)
+        def always_fail(_state)
           error!(type: :fail)
         end
       end
 
       parent_op = Class.new(NextStation::Operation) do
         attr_reader :calls
+
         def initialize(deps: {})
           super
           @calls = 0
         end
 
         process do
-          step :call_child, attempts: 3, retry_if: ->(state, error) { true }
+          step :call_child, attempts: 3, retry_if: ->(_state, _error) { true }
         end
 
         define_method :call_child do |state|

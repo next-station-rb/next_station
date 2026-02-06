@@ -60,8 +60,8 @@ RSpec.describe 'ValidationsLanguageSupport' do
         Class.new(NextStation::Operation) do
           errors do
             error_type :validation do
-              message en: "The provided data is invalid: %{errors}",
-                      sp: "Los datos son inválidos: %{errors}"
+              message en: 'The provided data is invalid: %<errors>s',
+                      sp: 'Los datos son inválidos: %<errors>s'
             end
           end
 

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'spec_helper'
 
 # Key Behaviors Verified:
@@ -39,9 +40,9 @@ RSpec.describe 'Validation Enforcement Inheritance' do
       # Even if the child doesn't call force_validation! explicitly,
       # it inherits the enforcement from the parent.
       expect { child_class.new.call(token: 'valid') }.to raise_error(
-                                                           NextStation::ValidationError,
-                                                           /Validation is enforced but step :validation is missing/
-                                                         )
+        NextStation::ValidationError,
+        /Validation is enforced but step :validation is missing/
+      )
     end
 
     # TODO: -  ¿is this odd?
@@ -95,7 +96,8 @@ RSpec.describe 'Validation Enforcement Inheritance' do
         process { step :logic }
 
         def logic(state)
-          ; state[:result] = 'ok'; state;
+          state[:result] = 'ok'
+          state
         end
       end
 

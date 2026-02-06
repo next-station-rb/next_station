@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module NextStation
   # Represents the result of an operation.
   class Result
@@ -16,6 +18,7 @@ module NextStation
       nil
     end
 
+    # @see NextStation::Result::Error
     # @return [NextStation::Result::Error, nil] The error object if it's a failure.
     def error
       nil
@@ -35,14 +38,14 @@ module NextStation
 
       def value
         if @enforced && @schema.nil?
-          raise NextStation::Error, "Result schema enforcement is enabled but no result_schema is defined."
+          raise NextStation::Error, 'Result schema enforcement is enabled but no result_schema is defined.'
         end
 
         return @raw_value unless @enforced && @schema
 
-        @validated_value ||= begin
+        @value ||= begin
           @schema.new(@raw_value)
-        rescue => e
+        rescue StandardError => e
           raise NextStation::ResultShapeError, e.message
         end
       end
@@ -68,12 +71,28 @@ module NextStation
 
     # Structured error information.
     class Error
+      # The error type.
+      # @example :invalid_input
+      # @example :not_found
+      # @example :email_taken
       # @return [Symbol]
       attr_reader :type
+
+      # A human-readable message describing the error.
+      # @example "Email is already taken"
+      # @example "User not found"
+      # @example "Something went wrong, please try again."
       # @return [String, nil]
       attr_reader :message
+
+      # An optional URL to help the end user resolve the error.
+      # @example "https://example.com/help/invalid_input"
       # @return [String, nil]
       attr_reader :help_url
+
+      # Additional error details.
+      # @example { age: ["must be greater than 18"] }
+      # @example { existing_email: true }
       # @return [Hash]
       attr_reader :details
       # @return [Hash]

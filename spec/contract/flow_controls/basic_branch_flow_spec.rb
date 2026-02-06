@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require "spec_helper"
+require 'spec_helper'
 
 RSpec.describe 'BasicBranchFlow' do
-  describe "#call" do
+  describe '#call' do
     class BasicBranchFlow < NextStation::Operation
       result_at :result
       process do
@@ -35,13 +35,13 @@ RSpec.describe 'BasicBranchFlow' do
       end
     end
 
-    it "Use branch to execute a group of steps only when a condition is met" do
+    it 'Use branch to execute a group of steps only when a condition is met' do
       op = BasicBranchFlow.new.call({ is_admin: true })
       expect(op.value[:privileges_granted]).to be true
       expect(op.value[:privileges_logged]).to be true
     end
 
-    it "Do not use branch to execute a group of steps when a condition is not met" do
+    it 'Do not use branch to execute a group of steps when a condition is not met' do
       op = BasicBranchFlow.new.call({ is_admin: false })
       expect(op.value[:privileges_granted]).to be false
       expect(op.value[:privileges_logged]).to be nil

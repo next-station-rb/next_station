@@ -12,7 +12,7 @@ out/
 # Ignore project files
 .idea/
 *.iml
-
+doc/
 # Ignore compiled Java class files
 *.class
 

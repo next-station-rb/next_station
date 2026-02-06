@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module NextStation
   # The core class for defining operations.
   #
@@ -53,7 +55,8 @@ module NextStation
       # @return [String, nil] The current help URL.
       def help_url(url = nil)
         return @help_url if url.nil?
-        raise "Only one help_url is allowed" if @help_url
+        raise 'Only one help_url is allowed' if @help_url
+
         @help_url = url
       end
 
@@ -153,8 +156,8 @@ module NextStation
 
     errors do
       error_type :validation do
-        message en: "One or more parameters are invalid. See validation details.",
-                sp: "Uno o más parámetros son inválidos. Ver detalles de validación."
+        message en: 'One or more parameters are invalid. See validation details.',
+                sp: 'Uno o más parámetros son inválidos. Ver detalles de validación.'
       end
     end
 
@@ -172,7 +175,7 @@ module NextStation
     # Defines a Dry::Struct schema for the result value.
     # @yield The block defining the schema.
     def self.result_schema(&block)
-      require "dry-struct"
+      require 'dry-struct'
       @result_class = Class.new(Dry::Struct, &block)
       @schema_enforced = true
     end
@@ -196,6 +199,7 @@ module NextStation
     def self.schema_enforced?
       return @schema_enforced unless @schema_enforced.nil?
       return superclass.schema_enforced? if superclass.respond_to?(:schema_enforced?)
+
       false
     end
 
@@ -230,20 +234,23 @@ module NextStation
     # @param contract_or_block [Class, nil] A Contract class or nil if a block is provided.
     # @yield The block defining the validation rules.
     def self.validate_with(contract_or_block = nil, &block)
-      require "dry-validation"
+      require 'dry-validation'
       @validation_contract_class = if block_given?
                                      Class.new(Dry::Validation::Contract, &block)
                                    elsif contract_or_block.is_a?(Class) && contract_or_block < Dry::Validation::Contract
                                      contract_or_block
                                    else
-                                     raise ValidationError, "validate_with requires a block or a Dry::Validation::Contract class"
+                                     raise ValidationError,
+                                           'validate_with requires a block or a Dry::Validation::Contract class'
                                    end
       @validation_enforced = true
     end
 
     # @return [Class, nil] The validation contract class.
     def self.validation_contract_class
-      @validation_contract_class || (superclass.validation_contract_class if superclass.respond_to?(:validation_contract_class))
+      @validation_contract_class || (if superclass.respond_to?(:validation_contract_class)
+                                       superclass.validation_contract_class
+                                     end)
     end
 
     # @return [Dry::Validation::Contract, nil] An instance of the validation contract.
@@ -264,6 +271,7 @@ module NextStation
     # @return [Boolean] Whether validation is enforced.
     def self.validation_enforced?
       return @validation_enforced unless @validation_enforced.nil?
+
       superclass.respond_to?(:validation_enforced?) ? superclass.validation_enforced? : false
     end
 
@@ -314,7 +322,7 @@ module NextStation
     # @return [NextStation::Result]
     def call(params = {}, context = {})
       if self.class.validation_enforced? && !self.class.has_step?(:validation)
-        raise ValidationError, "Validation is enforced but step :validation is missing from process block"
+        raise ValidationError, 'Validation is enforced but step :validation is missing from process block'
       end
 
       @state = State.new(params, context)
@@ -342,7 +350,7 @@ module NextStation
         raise e
       rescue NextStation::Error => e
         raise e
-      rescue => e
+      rescue StandardError => e
         return Result::Failure.new(
           Result::Error.new(
             type: :exception,
@@ -355,7 +363,7 @@ module NextStation
       key = self.class.result_key || :result
       unless @state.key?(key)
         raise NextStation::MissingResultKeyError, "Missing result key #{key.inspect} in state. " \
-                                                 "Operations must set this key or use result_at to specify another one."
+                                                 'Operations must set this key or use result_at to specify another one.'
       end
 
       Result::Success.new(
@@ -370,9 +378,7 @@ module NextStation
     # @return [NextStation::State]
     def validation(state)
       contract_class = self.class.validation_contract_class
-      unless contract_class
-        raise ValidationError, "Step :validation called but no contract defined via validate_with"
-      end
+      raise ValidationError, 'Step :validation called but no contract defined via validate_with' unless contract_class
 
       return state unless self.class.validation_enforced?
 
@@ -388,10 +394,10 @@ module NextStation
         # Attempt to get localized errors from dry-validation, fallback to default if it fails
         # (e.g. if I18n is not configured for that language in dry-validation)
         validation_errors = begin
-                              result.errors(locale: lang).to_h
-                            rescue StandardError
-                              result.errors.to_h
-                            end
+          result.errors(locale: lang).to_h
+        rescue StandardError
+          result.errors.to_h
+        end
 
         error!(
           type: :validation,
@@ -431,15 +437,14 @@ module NextStation
         state
       else
         child_error = result.error
-        if self.class.error_definitions.key?(child_error.type)
-          error!(
-            type: child_error.type,
-            msg_keys: child_error.msg_keys,
-            details: child_error.details
-          )
-        else
-          raise Halt.new(error: child_error)
-        end
+        raise Halt.new(error: child_error) unless self.class.error_definitions.key?(child_error.type)
+
+        error!(
+          type: child_error.type,
+          msg_keys: child_error.msg_keys,
+          details: child_error.details
+        )
+
       end
     end
 
@@ -464,7 +469,7 @@ module NextStation
 
     def execute_step(node, state)
       skip_condition = node.options[:skip_if]
-      return state if skip_condition && skip_condition.call(state)
+      return state if skip_condition&.call(state)
 
       retry_if = node.options[:retry_if]
       max_attempts = node.options[:attempts] || 1
@@ -478,23 +483,22 @@ module NextStation
           result = send(node.name, state)
 
           unless result.is_a?(NextStation::State)
-            class_name = self.class.name || "AnonymousOperation"
-            raise NextStation::StepReturnValueError, "Step '#{node.name}' in #{class_name} must return a NextStation::State object, but it returned #{result.class} (#{result.inspect})."
+            class_name = self.class.name || 'AnonymousOperation'
+            raise NextStation::StepReturnValueError,
+                  "Step '#{node.name}' in #{class_name} must return a NextStation::State object, but it returned #{result.class} (#{result.inspect})."
           end
 
           if retry_if && attempts < max_attempts && retry_if.call(result, nil)
-            sleep(delay) if delay > 0
+            sleep(delay) if delay.positive?
             next
           end
 
           return result
-        rescue => e
-          if retry_if && attempts < max_attempts && retry_if.call(state, e)
-            sleep(delay) if delay > 0
-            next
-          else
-            raise e
-          end
+        rescue StandardError => e
+          raise e unless retry_if && attempts < max_attempts && retry_if.call(state, e)
+
+          sleep(delay) if delay.positive?
+          next
         end
       end
     end

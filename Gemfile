@@ -1,9 +1,11 @@
-source "https://rubygems.org"
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
 
 # Specify your gem's dependencies in next_station.gemspec
 gemspec
 
 group :development do
-  gem "rspec"
+  gem 'rspec'
   gem 'rubocop', require: false
 end

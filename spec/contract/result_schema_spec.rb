@@ -30,7 +30,7 @@ RSpec.describe 'Result schema Spec' do
         step :set_data
       end
       def set_data(state)
-        state[:result] = {name: "A string"}
+        state[:result] = { name: 'A string' }
         state
       end
     end
@@ -47,6 +47,6 @@ RSpec.describe 'Result schema Spec' do
   it 'Success when enforced and schema given' do
     op = test_enforced_with_schema_given.call({})
     expect(op.success?).to be true
-    expect(op.value[:name]).to eq("A string")
+    expect(op.value[:name]).to eq('A string')
   end
 end
