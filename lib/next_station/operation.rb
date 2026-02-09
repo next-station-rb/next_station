@@ -296,7 +296,20 @@ module NextStation
       @dependencies || (superclass.respond_to?(:dependencies) ? superclass.dependencies : {})
     end
 
-    # @param deps [Hash] Injected dependencies.
+    # @example Example usage, simple initialization:
+    #   CreateUser.new
+    # Use ` .new(deps: ...) ` to inject dependencies (e.g. test doubles).
+    # @example Example usage, `.new` with override of dependencies:
+    #   # Assuming Mailer is a class that sends emails:
+    #   # class CreateUser < NextStation::Operation
+    #   #   depends mailer: -> { Mailer.new }
+    #   #   # rest of the class definition
+    #   # end
+    #   #
+    #   # You can then inject the mock mailer in tests:
+    #   mock_mailer = mock('mailer')
+    #   CreateUser.new(deps: { mailer: mock_mailer })
+    # @param deps [Hash] Allows to override the default dependencies.
     def initialize(deps: {})
       @injected_deps = deps
       @resolved_deps = {}
@@ -319,6 +332,8 @@ module NextStation
     # Executes the operation.
     # @param params [Hash] Input parameters.
     # @param context [Hash] Execution context (e.g. :lang).
+    # @example operation.call(name: 'john', age: 25)
+    # @example operation.call(params: { name: 'john', age: 25 }, context: { lang: :en })
     # @return [NextStation::Result]
     def call(params = {}, context = {})
       if self.class.validation_enforced? && !self.class.has_step?(:validation)

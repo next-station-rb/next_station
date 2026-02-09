@@ -8,6 +8,7 @@ capybara-*.html
 /tmp
 /db
 /doc
+/.yardoc
 .bundle
 .cache
 .config

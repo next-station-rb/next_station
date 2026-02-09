@@ -3,11 +3,15 @@
 module NextStation
   # Represents the result of an operation.
   class Result
+    # @example result.success? => true
+    # @example result.success? => false
     # @return [Boolean] true if the result is a success.
     def success?
       false
     end
 
+    # @example result.failure? => true
+    # @example result.failure? => false
     # @return [Boolean] true if the result is a failure.
     def failure?
       false
@@ -19,6 +23,11 @@ module NextStation
     end
 
     # @see NextStation::Result::Error
+    # @example result.error => #<NextStation::Result::Error: ...>
+    # @example Example methods inside of an NextStation::Result::Error
+    #   result.error.type
+    #   result.error.message
+    #   result.error.details
     # @return [NextStation::Result::Error, nil] The error object if it's a failure.
     def error
       nil
