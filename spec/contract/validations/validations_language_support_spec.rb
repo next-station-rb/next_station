@@ -4,12 +4,12 @@ require 'spec_helper'
 require 'dry-validation'
 
 RSpec.describe 'ValidationsLanguageSupport' do
+
   let(:operation_class) do
     Class.new(NextStation::Operation) do
-      # Configure the contract to use I18n as described in the README
-      validate_with do
-        config.messages.default_locale = :en
 
+      # Configure the contract (slim flavor, no manual config needed)
+      validate_with do
         params do
           required(:name).filled(:string)
         end
@@ -27,15 +27,16 @@ RSpec.describe 'ValidationsLanguageSupport' do
         result = operation.call({ name: '' }, { lang: :sp })
 
         expect(result).to be_failure
-        expect(result.error.type).to eq(:validation)
+        expect(result.error&.type).to eq(:validation)
         # result.error.details contains localized messages from dry-validation
-        expect(result.error.details[:name]).to include('no puede estar vacío')
+        # loaded from lib/next_station/config/errors.yml
+        expect(result.error&.details[:name]).to include('debe estar lleno')
       end
 
       it 'returns the default NextStation validation message in Spanish' do
         result = operation.call({ name: '' }, { lang: :sp })
 
-        expect(result.error.message).to eq('Uno o más parámetros son inválidos. Ver detalles de validación.')
+        expect(result.error&.message).to eq('Uno o más parámetros son inválidos. Ver detalles de validación.')
       end
     end
 
@@ -44,14 +45,30 @@ RSpec.describe 'ValidationsLanguageSupport' do
         result = operation.call({ name: '' }, { lang: :en })
 
         expect(result).to be_failure
-        expect(result.error.type).to eq(:validation)
-        expect(result.error.details[:name]).to include('must be filled')
+        expect(result.error&.type).to eq(:validation)
+        expect(result.error&.details[:name]).to include('must be filled')
       end
 
       it 'returns the default NextStation validation message in English' do
         result = operation.call({ name: '' }, { lang: :en })
 
-        expect(result.error.message).to eq('One or more parameters are invalid. See validation details.')
+        expect(result.error&.message).to eq('One or more parameters are invalid. See validation details.')
+      end
+    end
+
+    context 'when lang is missing' do
+      it 'returns localized validation error details in English as fallback when no :lang set' do
+        result = operation.call({ name: '' })
+        expect(result).to be_failure
+        expect(result.error&.type).to eq(:validation)
+        expect(result.error&.details[:name]).to include('must be filled')
+      end
+
+      it 'returns localized validation error details in English as fallback when a unknow :lang is set' do
+        result = operation.call({ name: '' }, { lang: :non_existent_lang_in_the_yaml })
+        expect(result).to be_failure
+        expect(result.error&.type).to eq(:validation)
+        expect(result.error&.details[:name]).to include('must be filled')
       end
     end
 
@@ -66,7 +83,6 @@ RSpec.describe 'ValidationsLanguageSupport' do
           end
 
           validate_with do
-            config.messages.backend = :i18n
             params { required(:name).filled(:string) }
           end
 
@@ -77,7 +93,8 @@ RSpec.describe 'ValidationsLanguageSupport' do
       it 'uses the custom localized message template from the errors DSL' do
         result = operation_with_custom_errors.new.call({ name: '' }, { lang: :sp })
 
-        expect(result.error.message).to start_with('Los datos son inválidos')
+        expect(result.error&.message).to start_with('Los datos son inválidos')
+        expect(result.error&.details[:name][0]).to include('debe estar lleno')
       end
     end
   end

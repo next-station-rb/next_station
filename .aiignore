@@ -13,6 +13,7 @@ out/
 .idea/
 *.iml
 doc/
+.yardoc
 # Ignore compiled Java class files
 *.class
 

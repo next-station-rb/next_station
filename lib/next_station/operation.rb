@@ -231,18 +231,33 @@ module NextStation
     end
 
     # Defines a Dry::Validation::Contract to validate the params.
+    #
+    # @note Future i18n support can be implemented here by checking for the 'i18n' gem:
+    #   begin
+    #     require 'i18n'
+    #     @validation_contract_class.config.messages.backend = :i18n
+    #   rescue LoadError
+    #     @validation_contract_class.config.messages.backend = :yaml
+    #   end
+    #
     # @param contract_or_block [Class, nil] A Contract class or nil if a block is provided.
     # @yield The block defining the validation rules.
     def self.validate_with(contract_or_block = nil, &block)
       require 'dry-validation'
       @validation_contract_class = if block_given?
-                                     Class.new(Dry::Validation::Contract, &block)
+                                     Class.new(Dry::Validation::Contract) do
+                                       config.messages.backend = :yaml
+                                       config.messages.top_namespace = 'next_station_validations'
+                                       config.messages.load_paths << File.expand_path('../config/errors.yml', __FILE__)
+                                       instance_eval(&block)
+                                     end
                                    elsif contract_or_block.is_a?(Class) && contract_or_block < Dry::Validation::Contract
                                      contract_or_block
                                    else
                                      raise ValidationError,
                                            'validate_with requires a block or a Dry::Validation::Contract class'
                                    end
+
       @validation_enforced = true
     end
 
@@ -397,6 +412,7 @@ module NextStation
 
       return state unless self.class.validation_enforced?
 
+      lang = state.context[:lang] || :en
       contract = self.class.validation_contract_instance
       result = contract.call(state.params)
 
@@ -404,8 +420,6 @@ module NextStation
         state[:params] = result.to_h
         state
       else
-        lang = state.context[:lang] || :en
-
         # Attempt to get localized errors from dry-validation, fallback to default if it fails
         # (e.g. if I18n is not configured for that language in dry-validation)
         validation_errors = begin
@@ -417,7 +431,7 @@ module NextStation
         error!(
           type: :validation,
           msg_keys: { errors: validation_errors }.merge(state.params),
-          details: result.errors.to_h
+          details: validation_errors
         )
       end
     end

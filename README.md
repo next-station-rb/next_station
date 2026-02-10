@@ -292,19 +292,13 @@ details." (available in English and Spanish).
 
 ### Localization
 
-NextStation automatically passes the `lang` from the context (e.g., `call(params, { lang: :sp })`) to the
-`dry-validation` contract. To use this, ensure `dry-validation` is configured to use I18n.
+NextStation automatically handles localization for validation errors. It defaults to a "slim" approach using the `:yaml` backend, loading translations from its internal configuration.
+
+The `lang` passed in the context (e.g., `call(params, { lang: :sp })`) is automatically respected.
 
 ```ruby
-# 1. Load the I18n extension (usually in an initializer)
-require "dry-validation"
-Dry::Validation.load_extensions(:i18n)
-
 class UpdateProfile < NextStation::Operation
   validate_with do
-    # 2. Configure the contract to use I18n
-    config.messages.backend = :i18n
-
     params do
       required(:name).filled(:string)
     end
@@ -313,11 +307,11 @@ class UpdateProfile < NextStation::Operation
   process { step :validation }
 end
 
-# 3. Pass the desired language in the context
+# Pass the desired language in the context
 result = UpdateProfile.new.call({ name: "" }, { lang: :sp })
 
 # result.error.details will contain the localized messages from dry-validation
-# => { name: ["no puede estar vacío"] }
+# => { name: ["debe estar lleno"] }
 ```
 
 ### Validation Enforcement

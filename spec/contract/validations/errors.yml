@@ -1,0 +1,6 @@
+sp:
+  dry_validation:
+    errors:
+      rules:
+        name:
+          filled?: "no puede estar vacío"
