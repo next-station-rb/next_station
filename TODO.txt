@@ -3,4 +3,4 @@ DONE - Custom Error class for state not set: spec/contract/basic_flows/success_s
 DONE - install rubocop?
 TODO - Raise exception if a step does not have a "def",
 TODO: - Should "state[:result]" be created by default when ".new"?
-FIXME - " config.messages.backend = :i18n" In the validation section of the README is no valid dry-validation code.
+DONE - " config.messages.backend = :i18n" In the validation section of the README is no valid dry-validation code.
