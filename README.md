@@ -293,6 +293,7 @@ details." (available in English and Spanish).
 ### Localization
 
 NextStation automatically handles localization for validation errors. It defaults to a "slim" approach using the `:yaml` backend, loading translations from its internal configuration.
+For this gem, the locale yml file is located at `lib/next_station/config/errors.yml`.
 
 The `lang` passed in the context (e.g., `call(params, { lang: :sp })`) is automatically respected.
 
