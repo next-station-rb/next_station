@@ -510,13 +510,32 @@ The result schema is applied **lazily**. Validation and coercion only occur when
 op = CreateUser.new.call(params)
 op.success? # => true (Operation finished without errors)
 
+# Access the generated class for testing or introspection:
+CreateUser::ResultSchema # => <Dry::Struct subclass>
+
 # Validation happens now:
 op.value 
-# => #<CreateUser::ResultClass id=1 email="john@example.com" ...>
+# => #<CreateUser::ResultSchema id=1 email="john@example.com" ...>
 
 # If the data doesn't match the schema:
 # => raises NextStation::ResultShapeError
 ```
+
+#### External Schemas
+
+You can also pass an existing `Dry::Struct` class to `result_schema`. This is useful for sharing schemas across multiple operations.
+
+```ruby
+class MySharedSchema < Dry::Struct
+  attribute :id, NextStation::Types::Integer
+end
+
+class CreateUser < NextStation::Operation
+  result_schema MySharedSchema
+end
+```
+
+Note that `result_schema` accepts either a `Dry::Struct` class OR a block, but not both. Providing both will raise a `NextStation::DoubleSchemaError`.
 
 #### Enabling/Disabling Enforcement
 

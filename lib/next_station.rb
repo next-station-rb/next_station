@@ -17,6 +17,9 @@ module NextStation
   # Raised when the result does not match the defined schema.
   class ResultShapeError < Error; end
 
+  # Raised when both a Dry::Struct class and a block are provided to result_schema.
+  class DoubleResultSchemaError < Error; end
+
   # Raised when there is a configuration error related to validations.
   class ValidationError < Error; end
 end

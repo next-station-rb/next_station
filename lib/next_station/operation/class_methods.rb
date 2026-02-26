@@ -84,10 +84,28 @@ module NextStation
       end
 
       # Defines a Dry::Struct schema for the result value.
+      # @param struct_class [Class, nil] A Dry::Struct class or nil if a block is provided.
       # @yield The block defining the schema.
-      def result_schema(&block)
+      def result_schema(struct_class = nil, &block)
         require 'dry-struct'
-        @result_class = Class.new(Dry::Struct, &block)
+
+        if struct_class && block_given?
+          raise NextStation::DoubleResultSchemaError, 'result_schema accepts either a Dry::Struct class OR a block, but not both.'
+        end
+
+        if struct_class
+          if struct_class.is_a?(Class) && struct_class < Dry::Struct
+            @result_class = struct_class
+          else
+            raise ArgumentError, 'result_schema requires a subclass of Dry::Struct'
+          end
+        elsif block_given?
+          @result_class = Class.new(Dry::Struct, &block)
+          const_set(:ResultSchema, @result_class) unless const_defined?(:ResultSchema, false)
+        else
+          raise ArgumentError, 'result_schema requires either a Dry::Struct class or a block'
+        end
+
         @schema_enforced = true
       end
 
