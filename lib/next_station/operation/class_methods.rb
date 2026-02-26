@@ -89,6 +89,10 @@ module NextStation
       def result_schema(struct_class = nil, &block)
         require 'dry-struct'
 
+        if @result_class
+          raise NextStation::DoubleResultSchemaError, 'result_schema has already been defined'
+        end
+
         if struct_class && block_given?
           raise NextStation::DoubleResultSchemaError, 'result_schema accepts either a Dry::Struct class OR a block, but not both.'
         end
