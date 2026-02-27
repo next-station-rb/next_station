@@ -168,6 +168,59 @@ class CreateUser < NextStation::Operation
 end
 ```
 
+### External Errors
+
+You can also pass an existing `NextStation::Errors` class to `errors`.
+
+```ruby
+
+class MyExternalErrors < NextStation::Errors
+  error_type :invalid_token do
+    message en: "Invalid token"
+    message sp: "Token inválido"
+  end
+end
+
+class GetUser < NextStation::Operation
+  errors MyExternalErrors
+  # ...
+end
+```
+
+### Shared Errors
+
+You can define shared error collections by inheriting from `NextStation::Errors`. This allows you to reuse common error
+definitions across multiple operations.
+
+```ruby
+
+class MySharedErrors < NextStation::Errors
+  error_type :not_found do
+    message en: "Resource not found", sp: "Recurso no encontrado"
+  end
+
+  error_type :unauthorized do
+    message en: "You are not authorized to perform this action"
+  end
+end
+
+class GetUser < NextStation::Operation
+  # Pass the class directly to errors
+  errors MySharedErrors
+
+  # You can still add operation-specific errors or override shared ones
+  errors do
+    error_type :user_inactive do
+      message en: "User is inactive"
+    end
+
+    error_type :not_found do
+      message en: "User with ID %{id} not found"
+    end
+  end
+end
+```
+
 ### Halting Execution
 
 Use `error!` within a step to stop the operation immediately and return a failure result:
@@ -509,9 +562,6 @@ The result schema is applied **lazily**. Validation and coercion only occur when
 ```ruby
 op = CreateUser.new.call(params)
 op.success? # => true (Operation finished without errors)
-
-# Access the generated class for testing or introspection:
-CreateUser::ResultSchema # => <Dry::Struct subclass>
 
 # Validation happens now:
 op.value 

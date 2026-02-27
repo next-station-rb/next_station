@@ -54,12 +54,22 @@ module NextStation
     # - {#dependencies}: Retrieves the defined dependencies.
     module ClassMethods
       # Defines error types for the operation.
+      # @param external_source [Class, nil] An external error collection class.
       # @yield The block defining errors via ErrorsDSL.
-      def errors(&block)
-        dsl = ErrorsDSL.new
-        dsl.instance_eval(&block)
+      def errors(external_source = nil, &block)
         @error_definitions ||= {}
-        @error_definitions.merge!(dsl.definitions)
+
+        # 1. Handle external source (e.g., SharedErrors < NextStation::Errors)
+        if external_source.respond_to?(:definitions)
+          @error_definitions.merge!(external_source.definitions)
+        end
+
+        # 2. Handle inline block
+        if block_given?
+          dsl = ErrorsDSL.new
+          dsl.instance_eval(&block)
+          @error_definitions.merge!(dsl.definitions)
+        end
       end
 
       # @return [Hash] The registered error definitions.

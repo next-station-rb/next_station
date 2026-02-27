@@ -26,6 +26,7 @@ end
 
 require_relative 'next_station/version'
 require_relative 'next_station/types'
+require_relative 'next_station/errors'
 require_relative 'next_station/state'
 require_relative 'next_station/result'
 require_relative 'next_station/operation'
