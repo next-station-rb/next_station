@@ -376,6 +376,83 @@ By default, if you define `validate_with`, the validation is considered enabled.
   operation will raise a `NextStation::ValidationError`.
 - **skip_validation!**: Disables the validation check even if `step :validation` is present.
 
+## Logging and Monitoring
+
+NextStation provides a built-in event system powered by `dry-monitor` to track operation lifecycle and user-defined
+logs.
+
+### Bult-in Logging
+
+Inside your operation steps, you can use `publish_log` to broadcast custom events. These are automatically routed to the
+configured logger by default.
+
+```ruby
+
+class CreateUser < NextStation::Operation
+  def persist(state)
+    # ... logic ...
+    publish_log(:info, "User persisted successfully", user_id: state[:user_id])
+    state
+  end
+end
+```
+
+The log will be structured as:
+
+```JSON
+{
+  "level": "INFO",
+  "time": "2026-03-01T20:32:54Z",
+  "pid": 92323,
+  "origin": {
+    "operation": "CreateUser",
+    "event": "log.custom",
+    "step_name": "persist"
+  },
+  "message": "Hello World from 1st step",
+  "payload": {
+    "user_id": 1
+  }
+}
+```
+
+- The log will automatically include the fields `trace_id` and `span_id` if the OpenTelemetry SDK is detected,
+
+### Configuration
+
+By default, NextStation logs to `STDOUT` using the standard Ruby `Logger`. You can configure a custom logger (like
+`Rails.logger`) or a custom monitor:
+
+```ruby
+NextStation.configure do |config|
+  config.logger = Rails.logger
+  # config.monitor = MyCustomMonitor.new
+end
+```
+
+### Lifecycle Events
+
+NextStation automatically broadcasts events for every operation and step execution. You can subscribe to these events to
+integrate with external monitoring tools (Datadog, Prometheus, etc.):
+
+```ruby
+NextStation.config.monitor.subscribe("operation.stop") do |event|
+  puts "Operation #{event[:operation]} finished in #{event[:duration]}ms"
+end
+
+NextStation.config.monitor.subscribe("step.retry") do |event|
+  puts "Step #{event[:step]} failed (attempt #{event[:attempt]}) with: #{event[:error].message}"
+end
+```
+
+**Available Events:**
+
+- `operation.start`: Triggered when an operation starts.
+- `operation.stop`: Triggered when an operation finishes (success or failure). Includes `duration` and `result`.
+- `step.start`: Triggered before a step starts.
+- `step.stop`: Triggered after a step finishes. Includes `duration` and `state`.
+- `step.retry`: Triggered when a step fails and is about to be retried.
+
 ## Dependency Injection
 
 NextStation includes a lightweight Dependency Injection (DI) system to help you decouple your operations from their external dependencies.

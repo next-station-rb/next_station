@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
+require_relative 'next_station/config'
+
 # NextStation is a lightweight, service-object like framework for Ruby
 # that emphasizes structured operations, railway-oriented programming,
 # and strong validation.
 module NextStation
-  # Base error class for all NextStation errors
+
+# Base error class for all NextStation errors
   class Error < StandardError; end
 
   # Raised when a step method returns something other than a NextStation::State object.

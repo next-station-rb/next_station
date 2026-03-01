@@ -14,6 +14,8 @@ module NextStation
     attr_reader :context
     # @return [Integer] The attempt number of the current step.
     attr_reader :step_attempt
+    # @return [Symbol, nil] The name of the current step being executed.
+    attr_reader :current_step
 
     # @param params [Hash] Initial parameters.
     # @param context [Hash] Shared context (immutable).
@@ -21,12 +23,19 @@ module NextStation
       @context = context.dup.freeze
       @data = { params: unwrap_params(params).dup }
       @step_attempt = 1
+      @current_step = nil
     end
 
     # Sets the current attempt number for the active step.
     # @param value [Integer]
     def set_step_attempt(value)
       @step_attempt = value
+    end
+    
+    # Sets the name of the current step.
+    # @param value [Symbol, nil]
+    def set_current_step(value)
+      @current_step = value
     end
 
     # Returns the input parameters.

@@ -58,6 +58,12 @@ module NextStation
     # @example operation.call(params: { name: 'john', age: 25 }, context: { lang: :en })
     # @return [NextStation::Result]
     def call(params = {}, context = {})
+      monitor = NextStation.config.monitor
+
+      monitor.publish('operation.start', operation: self.class.name, params: params, context: context)
+
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
       if self.class.validation_enforced? && !self.class.has_step?(:validation)
         raise ValidationError, 'Validation is enforced but step :validation is missing from process block'
       end
@@ -68,33 +74,47 @@ module NextStation
       begin
         @state = execute_nodes(self.class.steps, @state)
       rescue Halt => e
-        return Result::Failure.new(e.error) if e.error
+        result = if e.error
+                   Result::Failure.new(e.error)
+                 else
+                   definition = self.class.error_definitions[e.type]
+                   raise "Undeclared error type: #{e.type}" unless definition
 
-        definition = self.class.error_definitions[e.type]
-        raise "Undeclared error type: #{e.type}" unless definition
-
-        message = definition.resolve_message(lang, e.msg_keys)
-        return Result::Failure.new(
-          Result::Error.new(
-            type: e.type,
-            message: message,
-            help_url: definition.help_url,
-            details: e.details,
-            msg_keys: e.msg_keys
-          )
-        )
+                   message = definition.resolve_message(lang, e.msg_keys)
+                   Result::Failure.new(
+                     Result::Error.new(
+                       type: e.type,
+                       message: message,
+                       help_url: definition.help_url,
+                       details: e.details,
+                       msg_keys: e.msg_keys
+                     )
+                   )
+                 end
+        monitor.publish('operation.stop',
+                        operation: self.class.name,
+                        duration: duration(start_time),
+                        result: result,
+                        state: @state)
+        return result
       rescue NextStation::ValidationError => e
         raise e
       rescue NextStation::Error => e
         raise e
       rescue StandardError => e
-        return Result::Failure.new(
+        result = Result::Failure.new(
           Result::Error.new(
             type: :exception,
             message: e.message,
             details: { backtrace: e.backtrace }
           )
         )
+        monitor.publish('operation.stop',
+                        operation: self.class.name,
+                        duration: duration(start_time),
+                        result: result,
+                        state: @state)
+        return result
       end
 
       key = self.class.result_key || :result
@@ -103,11 +123,18 @@ module NextStation
                                                  'Operations must set this key or use result_at to specify another one.'
       end
 
-      Result::Success.new(
+      result = Result::Success.new(
         @state[key],
         schema: self.class.result_class,
         enforced: self.class.schema_enforced?
       )
+
+      monitor.publish('operation.stop',
+                      operation: self.class.name,
+                      duration: duration(start_time),
+                      result: result,
+                      state: @state)
+      result
     end
 
     # Built-in step for performing validation.
@@ -151,6 +178,21 @@ module NextStation
       raise Halt.new(type: type, msg_keys: msg_keys, details: details)
     end
 
+    # Publishes a log event to the monitor.
+    # @param level [Symbol] The log level (e.g. :info, :error).
+    # @param message [String] The log message.
+    # @param payload [Hash] Additional metadata for the log.
+    def publish_log(level, message, payload = {})
+      NextStation.config.monitor.publish(
+        'log.custom',
+        level: level,
+        message: message,
+        operation: self.class.name,
+        step_name: @state&.current_step,
+        payload: payload
+      )
+    end
+
     # Calls another operation and integrates its result into the current state.
     # @param state [NextStation::State]
     # @param operation_class [Class, Object] The operation to call.
@@ -186,6 +228,10 @@ module NextStation
 
     private
 
+    def duration(start_time)
+      ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000).round(2)
+    end
+
     def execute_nodes(nodes, state)
       nodes.reduce(state) do |current_state, node|
         execute_node(node, current_state)
@@ -207,14 +253,21 @@ module NextStation
       skip_condition = node.options[:skip_if]
       return state if skip_condition&.call(state)
 
+      state.set_current_step(node.name)
+
       retry_if = node.options[:retry_if]
       max_attempts = node.options[:attempts] || 1
       delay = node.options[:delay] || 0
       attempts = 0
+      monitor = NextStation.config.monitor
 
       loop do
         attempts += 1
         state.set_step_attempt(attempts)
+
+        monitor.publish('step.start', operation: self.class.name, step: node.name, state: state, attempt: attempts)
+        start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
         begin
           result = send(node.name, state)
 
@@ -225,16 +278,44 @@ module NextStation
           end
 
           if retry_if && attempts < max_attempts && retry_if.call(result, nil)
+            monitor.publish('step.retry',
+                            operation: self.class.name,
+                            step: node.name,
+                            state: result,
+                            attempt: attempts,
+                            duration: duration(start_time))
             sleep(delay) if delay.positive?
             next
           end
 
+          monitor.publish('step.stop',
+                          operation: self.class.name,
+                          step: node.name,
+                          state: result,
+                          attempt: attempts,
+                          duration: duration(start_time))
           return result
         rescue StandardError => e
-          raise e unless retry_if && attempts < max_attempts && retry_if.call(state, e)
+          if retry_if && attempts < max_attempts && retry_if.call(state, e)
+            monitor.publish('step.retry',
+                            operation: self.class.name,
+                            step: node.name,
+                            state: state,
+                            attempt: attempts,
+                            error: e,
+                            duration: duration(start_time))
+            sleep(delay) if delay.positive?
+            next
+          end
 
-          sleep(delay) if delay.positive?
-          next
+          monitor.publish('step.stop',
+                          operation: self.class.name,
+                          step: node.name,
+                          state: state,
+                          attempt: attempts,
+                          error: e,
+                          duration: duration(start_time))
+          raise e
         end
       end
     end
