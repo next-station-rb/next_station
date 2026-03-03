@@ -178,10 +178,23 @@ module NextStation
       raise Halt.new(type: type, msg_keys: msg_keys, details: details)
     end
 
-    # Publishes a log event to the monitor.
-    # @param level [Symbol] The log level (e.g. :info, :error).
+    # Publishes a log event to the default monitor.
+    #
+    # NextStation provides a built-in event system powered by dry-monitor to track user-defined logs.
+    # Inside your operation steps, you can use publish_log to broadcast custom events.
+    # These are automatically routed to the configured logger by default.
+    #
+    # By default, NextStation logs to STDOUT using the standard Ruby Logger.
+    # @param [Symbol] level The log level.
+    # @option level [Symbol] :info Informational message
+    # @option level [Symbol] :warn  Warning condition
+    # @option level [Symbol] :error Error condition
+    # @option level [Symbol] :fatal Fatal error
+    # @option level [Symbol] :debug Debugging message
     # @param message [String] The log message.
     # @param payload [Hash] Additional metadata for the log.
+    # @example publish_log :info, 'simple log message'
+    # @example publish_log :info, 'log with custom payload', user_id: 5, hello: 'world'
     def publish_log(level, message, payload = {})
       NextStation.config.monitor.publish(
         'log.custom',

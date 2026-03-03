@@ -237,6 +237,19 @@ module NextStation
 
       # Defines dependencies for the operation.
       # @param deps [Hash] A mapping of dependency names to values or Procs.
+      # @example depends mailer: -> { Mailer.new }
+      # @example depends repository: UserRepository.new
+      # @example Usage inside a step:
+      #   def send_email
+      #     # Access dependencies using the dependency() method
+      #     dependency(:mailer).send_welcome(state.params[:email])
+      #     # rest of the step
+      #   end
+      #
+      # @example You can override the dependencies when instantiating the operation by passing the deps: argument:
+      #   mock_mailer = double("Mailer")
+      #   operation = CreateUser.new(deps: { mailer: mock_mailer })
+      #   operation.call(email: "test@example.com")
       def depends(deps)
         @dependencies = dependencies.merge(deps)
       end
