@@ -9,7 +9,7 @@ RSpec.describe 'NextStation Logging and Monitoring' do
 
   before do
     # Reset configuration before each test
-    logger.formatter = JsonFormatter.new
+    logger.formatter = NextStation::Logging::Formatter::Json.new
     NextStation.config.logger = logger
     
     # Fully reset the monitor to ensure test isolation
@@ -22,12 +22,8 @@ RSpec.describe 'NextStation Logging and Monitoring' do
     monitor.register_event('log.custom')
     NextStation.config.monitor = monitor
 
-    # Re-subscribe the default listener for this new monitor instance
-    # Instead of load, which might be risky if it redefines things, 
-    # we just need to make sure the subscriptions in custom_log.rb are active
-    # for THIS monitor. Since they are at the top level of the file, 
-    # loading it again will subscribe them to the CURRENT NextStation.config.monitor.
-    load 'next_station/logging/subscribers/custom_log.rb'
+    # Setup subscribers for this new monitor instance
+    NextStation::Logging.setup!(monitor)
   end
 
   class LoggingOperation < NextStation::Operation
@@ -67,7 +63,7 @@ RSpec.describe 'NextStation Logging and Monitoring' do
   it 'allows changing the logger' do
     new_output = StringIO.new
     new_logger = Logger.new(new_output)
-    new_logger.formatter = JsonFormatter.new
+    new_logger.formatter = NextStation::Logging::Formatter::Json.new
     
     NextStation.configure do |config|
       config.logger = new_logger

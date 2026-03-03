@@ -2,6 +2,20 @@
 
 NextStation is a lightweight, flexible framework for building service objects (Operations) in Ruby. It provides a clean DSL to define business processes, manage state, and handle flow control.
 
+## Index
+
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Core Concepts](#core-concepts)
+- [Flow Control](#flow-control)
+- [Railway Pattern & Errors](#railway-pattern--errors)
+- [Input Validation (dry-validation)](#input-validation-dry-validation)
+- [Logging and Monitoring](#logging-and-monitoring)
+- [Dependency Injection](#dependency-injection)
+- [Nested Operations (Operation Composition)](#nested-operations-operation-composition)
+- [Advanced Usage](#advanced-usage)
+- [License](#license)
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -421,11 +435,18 @@ The log will be structured as:
 ### Configuration
 
 By default, NextStation logs to `STDOUT` using the standard Ruby `Logger`. You can configure a custom logger (like
-`Rails.logger`) or a custom monitor:
+`Rails.logger`) or a custom monitor. Default logging subscribers are enabled by default.
 
 ```ruby
 NextStation.configure do |config|
   config.logger = Rails.logger
+  # Set logging level (:debug, :info, :warn, :error, :fatal, :unknown).
+  # :info (default): logs everything except debug level.
+  # :warn: logs warn and above levels.
+  # :debug: logs everything including individual step start/stop events.
+  config.logging_level = :info
+  # To disable default logging subscribers:
+  # config.logging_enabled = false
   # config.monitor = MyCustomMonitor.new
 end
 ```

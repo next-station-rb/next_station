@@ -7,7 +7,7 @@ require_relative 'next_station/config'
 # and strong validation.
 module NextStation
 
-# Base error class for all NextStation errors
+ # Base error class for all NextStation errors
   class Error < StandardError; end
 
   # Raised when a step method returns something other than a NextStation::State object.
