@@ -11,7 +11,15 @@ module NextStation
   extend Dry::Configurable
 
   # Define the environment
-  setting :environment, default: Environment.new
+  setting :environment, default: Environment.new, constructor: ->(v) {
+    if v.is_a?(String)
+      env = Environment.new
+      env.current = v
+      env
+    else
+      v
+    end
+  }
 
   # Define the monitor
   setting :monitor, default: (

@@ -44,12 +44,25 @@ RSpec.describe NextStation::Environment do
       expect(environment.current).to eq('custom')
     end
     
-    it 'memoizes the result' do
+    it 'does not memoize the result' do
       ENV['RAILS_ENV'] = 'production'
       expect(environment.current).to eq('production')
       
       ENV['RAILS_ENV'] = 'development'
-      expect(environment.current).to eq('production')
+      expect(environment.current).to eq('development')
+    end
+  end
+
+  describe '#current=' do
+    it 'allows manually setting the environment name' do
+      environment.current = 'staging'
+      expect(environment.current).to eq('staging')
+    end
+
+    it 'overrides environment variables' do
+      ENV['RAILS_ENV'] = 'production'
+      environment.current = 'test'
+      expect(environment.current).to eq('test')
     end
   end
 

@@ -722,17 +722,30 @@ You can use all standard dry-types via `NextStation::Types`.
 
 ### Environment Configuration
 
-NextStation's behavior can be environment-aware. The environment is determined by the `NextStation.config.environment` object, which you can customize.
+NextStation's behavior can be environment-aware.
 
-By default, it checks for `RAILS_ENV`, `RACK_ENV`, `APP_ENV`, and `RUBY_ENV` and considers `development` and `dev` as development environments.
+By default, it automatically detects the environment by checking for `RAILS_ENV`, `RACK_ENV`, `APP_ENV`, and `RUBY_ENV`.
+It considers `development` and `dev` as development environments, and `production`, `prod`, `prd` as production-like.
 
-You can customize this behavior in your configuration:
+### Simple Configuration
+
+You can set the environment name directly:
 
 ```ruby
 NextStation.configure do |config|
-  # Add a custom environment variable to check (it will be checked first)
-  config.environment.env_vars.unshift('MY_APP_ENV')
+  config.environment = 'production'
+  # or
+  config.environment = ENV['MY_APP_ENV']
+end
+```
 
+### Advanced Configuration
+
+If you need to customize which names are considered "production" or "development", or which environment variables to
+check, you can access the environment object properties:
+
+```ruby
+NextStation.configure do |config|
   # Consider 'staging' as a production-like environment
   config.environment.production_names << 'staging'
 end

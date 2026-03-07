@@ -5,6 +5,7 @@ module NextStation
   # based on a configurable set of environment variables.
   class Environment
     attr_accessor :env_vars, :production_names, :development_names
+    attr_writer :current
 
     def initialize
       # A list of common environment variables to check for the environment name.
@@ -15,12 +16,15 @@ module NextStation
       
       # Names that are considered to be a "development" environment.
       @development_names = %w[development dev]
+      
+      # Manually set environment name.
+      @current = nil
     end
 
     # Returns the current environment name. Defaults to 'development' if none is found.
     # @return [String]
     def current
-      @current ||= env_vars.map { |var| ENV[var] }.compact.first || 'development'
+      @current || env_vars.map { |var| ENV[var] }.compact.first || 'development'
     end
 
     # Checks if the current environment is production.

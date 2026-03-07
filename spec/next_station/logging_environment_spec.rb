@@ -51,13 +51,28 @@ RSpec.describe 'Automatic Formatter Selection' do
     expect(logger.formatter).to be_an_instance_of(NextStation::Logging::Formatter::Json)
   end
   
-  it 'defaults to development and uses Console formatter when no ENV is set' do
-    # ensure no env is set
-    %w[RAILS_ENV RACK_ENV APP_ENV RUBY_ENV].each { |var| ENV.delete(var) }
+  it 'allows setting environment as a string' do
+    NextStation.configure do |config|
+      config.environment = 'production'
+    end
+    
+    expect(NextStation.config.environment).to be_an_instance_of(NextStation::Environment)
+    expect(NextStation.config.environment.current).to eq('production')
+    expect(NextStation.config.environment.production?).to be true
     
     NextStation::Logging.setup!
+    expect(logger.formatter).to be_an_instance_of(NextStation::Logging::Formatter::Json)
+  end
+
+  it 'allows setting environment as a string to development' do
+    NextStation.configure do |config|
+      config.environment = 'dev'
+    end
     
-    expect(NextStation.config.environment.current).to eq('development')
+    expect(NextStation.config.environment.current).to eq('dev')
+    expect(NextStation.config.environment.development?).to be true
+    
+    NextStation::Logging.setup!
     expect(logger.formatter).to be_an_instance_of(NextStation::Logging::Formatter::Console)
   end
 end
