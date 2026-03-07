@@ -31,7 +31,7 @@ module NextStation
 
           log_entry = {
             level: severity,
-            time: time.utc.iso8601,
+            time: time.utc.strftime('%Y-%m-%dT%H:%M:%S.%6N'),
             pid: Process.pid,
             origin: build_origin(data),
             message: data[:message],

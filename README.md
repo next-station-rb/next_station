@@ -416,7 +416,7 @@ The log will be structured as:
 ```JSON
 {
   "level": "INFO",
-  "time": "2026-03-01T20:32:54Z",
+  "time": "2026-03-01T20:32:54.123456",
   "pid": 92323,
   "origin": {
     "operation": "CreateUser",
