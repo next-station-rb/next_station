@@ -3,10 +3,15 @@
 require 'dry-configurable'
 require 'dry-monitor'
 require 'logger'
+require_relative 'environment'
 require_relative 'logging/formatters/json'
+require_relative 'logging/formatters/console'
 
 module NextStation
   extend Dry::Configurable
+
+  # Define the environment
+  setting :environment, default: Environment.new
 
   # Define the monitor
   setting :monitor, default: (
@@ -28,9 +33,6 @@ module NextStation
 
   # Default logging level (:info, :debug)
   setting :logging_level, default: :info
-
-  # Apply the custom formatter to the default logger
-  config.logger.formatter = Logging::Formatter::Json.new
 end
 
 require_relative 'logging'

@@ -8,6 +8,9 @@ RSpec.describe 'NextStation Logging and Monitoring' do
   let(:logger) { Logger.new(output) }
 
   before do
+    # Ensure environment is not development to avoid Console formatter in tests that expect JSON
+    allow(NextStation.config.environment).to receive(:development?).and_return(false)
+
     # Reset configuration before each test
     logger.formatter = NextStation::Logging::Formatter::Json.new
     NextStation.config.logger = logger

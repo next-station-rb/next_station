@@ -434,17 +434,28 @@ The log will be structured as:
 
 ### Configuration
 
-By default, NextStation logs to `STDOUT` using the standard Ruby `Logger`. You can configure a custom logger (like
-`Rails.logger`) or a custom monitor. Default logging subscribers are enabled by default.
+NextStation features an environment-aware logging configuration that works out of the box.
+
+- **In Development:** It defaults to the `Console` formatter, providing human-readable, colorized output to `STDOUT`.
+  Example: `[I][2026-03-01 20:32:54][CreateUser/persist] -- User persisted successfully {:user_id=>1}`
+- **In Production (or any other environment):** It defaults to the `Json` formatter, which is ideal for structured logging.
+
+You can customize the logger, logging level, and other options:
 
 ```ruby
 NextStation.configure do |config|
+  # Use a different logger (e.g., Rails.logger)
   config.logger = Rails.logger
+  
+  # Manually override the formatter if needed
+  # config.logger.formatter = NextStation::Logging::Formatter::Json.new
+
   # Set logging level (:debug, :info, :warn, :error, :fatal, :unknown).
   # :info (default): logs everything except debug level.
   # :warn: logs warn and above levels.
   # :debug: logs everything including individual step start/stop events.
   config.logging_level = :info
+  
   # To disable default logging subscribers:
   # config.logging_enabled = false
   # config.monitor = MyCustomMonitor.new
@@ -708,6 +719,24 @@ end
 #### Types
 
 You can use all standard dry-types via `NextStation::Types`.
+
+### Environment Configuration
+
+NextStation's behavior can be environment-aware. The environment is determined by the `NextStation.config.environment` object, which you can customize.
+
+By default, it checks for `RAILS_ENV`, `RACK_ENV`, `APP_ENV`, and `RUBY_ENV` and considers `development` and `dev` as development environments.
+
+You can customize this behavior in your configuration:
+
+```ruby
+NextStation.configure do |config|
+  # Add a custom environment variable to check (it will be checked first)
+  config.environment.env_vars.unshift('MY_APP_ENV')
+
+  # Consider 'staging' as a production-like environment
+  config.environment.production_names << 'staging'
+end
+```
 
 ## License
 
