@@ -411,34 +411,37 @@ class CreateUser < NextStation::Operation
 end
 ```
 
-The log will be structured as:
-
-```JSON
-{
-  "level": "INFO",
-  "time": "2026-03-01T20:32:54.123456",
-  "pid": 92323,
-  "origin": {
-    "operation": "CreateUser",
-    "event": "log.custom",
-    "step_name": "persist"
-  },
-  "message": "Hello World from 1st step",
-  "payload": {
-    "user_id": 1
-  }
-}
-```
-
 - The log will automatically include the fields `trace_id` and `span_id` if the OpenTelemetry SDK is detected,
-
-### Configuration
 
 NextStation features an environment-aware logging configuration that works out of the box.
 
 - **In Development:** It defaults to the `Console` formatter, providing human-readable, colorized output to `STDOUT`.
-  Example: `[I][2026-03-01 20:32:54][CreateUser/persist] -- User persisted successfully {:user_id=>1}`
-- **In Production (or any other environment):** It defaults to the `Json` formatter, which is ideal for structured logging.
+  Example:
+
+  ```Text
+  [I][2026-03-01 20:32:54][CreateUser/persist] -- User persisted successfully {:user_id=>1}
+  ```
+
+- **In Production (or any other environment):** It defaults to the `Json` formatter, which is ideal for structured
+  logging. Example:
+    ```JSON
+    {
+     "level": "INFO",
+      "time": "2026-03-01T20:32:54.123456",
+      "pid": 92323,
+      "origin": {
+        "operation": "CreateUser",
+        "event": "log.custom",
+        "step_name": "persist"
+      },
+      "message": "User persisted successfully",
+      "payload": {
+        "user_id": 1
+      }
+     }
+    ```
+
+### Configuration
 
 You can customize the logger, logging level, and other options:
 
