@@ -2,11 +2,11 @@ PATH
   remote: .
   specs:
     next_station (0.1.0)
-      dry-configurable
-      dry-monitor
-      dry-struct
-      dry-types
-      dry-validation
+      dry-configurable (~> 1)
+      dry-monitor (~> 1)
+      dry-struct (~> 1)
+      dry-types (~> 1)
+      dry-validation (~> 1)
 
 GEM
   remote: https://rubygems.org/

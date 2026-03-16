@@ -6,13 +6,13 @@ Gem::Specification.new do |spec|
   spec.name          = 'next_station'
   spec.version       = NextStation::VERSION
   spec.authors       = ['Hugo Vilchis']
-  spec.email         = ['TODO: Write your email address']
+  spec.email = ['havilchis@users.noreply.github.com']
 
   spec.summary       = 'TODO: Write a short summary, because RubyGems requires one.'
   spec.description   = 'TODO: Write a longer description or delete this line.'
   spec.homepage      = "TODO: Put your gem's website or public repo URL here."
   spec.license       = 'MIT'
-  spec.required_ruby_version = '>= 2.6.0'
+  spec.required_ruby_version = '>= 3.0.0'
 
   spec.metadata['allowed_push_host'] = "TODO: Set to your gem server 'https://example.com'"
 
@@ -32,11 +32,11 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   # Uncomment to register a new dependency of your gem
-  spec.add_dependency 'dry-struct'
-  spec.add_dependency 'dry-types'
-  spec.add_dependency 'dry-validation'
-  spec.add_dependency 'dry-configurable'
-  spec.add_dependency 'dry-monitor'
+  spec.add_dependency 'dry-struct', '~> 1'
+  spec.add_dependency 'dry-types', '~> 1'
+  spec.add_dependency 'dry-validation', '~> 1'
+  spec.add_dependency 'dry-configurable', '~> 1'
+  spec.add_dependency 'dry-monitor', '~> 1'
 
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'rubocop'
