@@ -68,8 +68,12 @@ module NextStation
         raise ValidationError, 'Validation is enforced but step :validation is missing from process block'
       end
 
-      @state = State.new(params, context)
+      @state = State.new(params, context, self.class.loaded_plugins)
       lang = context[:lang] || :en
+
+      self.class.loaded_plugins.each do |mod|
+        mod.on_operation_start(self, @state) if mod.respond_to?(:on_operation_start)
+      end
 
       begin
         @state = execute_nodes(self.class.steps, @state)
@@ -91,6 +95,11 @@ module NextStation
                      )
                    )
                  end
+
+        self.class.loaded_plugins.each do |mod|
+          mod.on_operation_stop(self, result) if mod.respond_to?(:on_operation_stop)
+        end
+
         monitor.publish('operation.stop',
                         operation: self.class.name,
                         duration: duration(start_time),
@@ -109,6 +118,11 @@ module NextStation
             details: { backtrace: e.backtrace }
           )
         )
+
+        self.class.loaded_plugins.each do |mod|
+          mod.on_operation_stop(self, result) if mod.respond_to?(:on_operation_stop)
+        end
+
         monitor.publish('operation.stop',
                         operation: self.class.name,
                         duration: duration(start_time),
@@ -128,6 +142,10 @@ module NextStation
         schema: self.class.result_class,
         enforced: self.class.schema_enforced?
       )
+
+      self.class.loaded_plugins.each do |mod|
+        mod.on_operation_stop(self, result) if mod.respond_to?(:on_operation_stop)
+      end
 
       monitor.publish('operation.stop',
                       operation: self.class.name,
@@ -257,6 +275,9 @@ module NextStation
         execute_step(node, state)
       when :branch
         execute_branch(node, state)
+      when :wrapper
+        handler = node.options[:handler]
+        send(handler, node, state)
       else
         state
       end
@@ -282,7 +303,9 @@ module NextStation
         start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
         begin
-          result = send(node.name, state)
+          result = wrap_in_hooks(node, state) do |current_state|
+            send(node.name, current_state)
+          end
 
           unless result.is_a?(NextStation::State)
             class_name = self.class.name || 'AnonymousOperation'
@@ -299,6 +322,10 @@ module NextStation
                             duration: duration(start_time))
             sleep(delay) if delay.positive?
             next
+          end
+
+          self.class.loaded_plugins.each do |mod|
+            mod.on_step_success(self, node, result) if mod.respond_to?(:on_step_success)
           end
 
           monitor.publish('step.stop',
@@ -321,6 +348,10 @@ module NextStation
             next
           end
 
+          self.class.loaded_plugins.each do |mod|
+            mod.on_step_failure(self, node, state, e) if mod.respond_to?(:on_step_failure)
+          end
+
           monitor.publish('step.stop',
                           operation: self.class.name,
                           step: node.name,
@@ -339,6 +370,23 @@ module NextStation
         execute_nodes(node.children, state)
       else
         state
+      end
+    end
+
+    def wrap_in_hooks(node, state, &block)
+      around_hooks = self.class.loaded_plugins.select { |p| p.respond_to?(:around_step) }
+      run_around_hooks(around_hooks, node, state, &block)
+    end
+
+    def run_around_hooks(hooks, node, state, &block)
+      if hooks.empty?
+        yield state
+      else
+        hook = hooks.first
+        remaining = hooks[1..]
+        hook.around_step(self, node, state) do
+          run_around_hooks(remaining, node, state, &block)
+        end
       end
     end
   end

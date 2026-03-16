@@ -54,7 +54,7 @@ module NextStation
     # - {#dependencies}: Retrieves the defined dependencies.
     module ClassMethods
       # Defines error types for the operation.
-      # @param external_source [Class, nil] An external error collection class.
+      # @param external_source [Class, Hash, nil] An external error collection class or a hash of definitions.
       # @yield The block defining errors via ErrorsDSL.
       def errors(external_source = nil, &block)
         @error_definitions ||= {}
@@ -62,6 +62,14 @@ module NextStation
         # 1. Handle external source (e.g., SharedErrors < NextStation::Errors)
         if external_source.respond_to?(:definitions)
           @error_definitions.merge!(external_source.definitions)
+        elsif external_source.is_a?(Hash)
+          external_source.each do |type, config|
+            definition = ErrorDefinition.new(type)
+            definition.message(config[:message]) if config[:message]
+            definition.help_url(config[:help_url]) if config[:help_url]
+            definition.validate!
+            @error_definitions[type] = definition
+          end
         end
 
         # 2. Handle inline block
@@ -257,6 +265,34 @@ module NextStation
       # @return [Hash] The defined dependencies.
       def dependencies
         @dependencies || (superclass.respond_to?(:dependencies) ? superclass.dependencies : {})
+      end
+
+      # Convenience method to instantiate and call the operation.
+      def call(params = {}, context = {}, deps: {})
+        new(deps: deps).call(params, context)
+      end
+
+      # Enables a plugin for the operation.
+      # @param name [Symbol] The registered plugin name.
+      def plugin(name)
+        require 'dry-configurable'
+        mod = NextStation::Plugins.load_plugin(name)
+        loaded_plugins << mod
+
+        extend mod::ClassMethods if mod.const_defined?(:ClassMethods)
+        include mod::InstanceMethods if mod.const_defined?(:InstanceMethods)
+        NextStation::Operation::Node.include mod::DSL if mod.const_defined?(:DSL)
+
+        if mod.const_defined?(:Errors) && mod::Errors.respond_to?(:definitions)
+          errors(mod::Errors.definitions)
+        end
+
+        mod.configure(self) if mod.respond_to?(:configure)
+      end
+
+      # @return [Array<Module>] The plugins loaded into this operation.
+      def loaded_plugins
+        @loaded_plugins ||= (superclass.respond_to?(:loaded_plugins) ? superclass.loaded_plugins.dup : [])
       end
     end
   end

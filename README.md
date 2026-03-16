@@ -13,6 +13,7 @@ NextStation is a lightweight, flexible framework for building service objects (O
 - [Logging and Monitoring](#logging-and-monitoring)
 - [Dependency Injection](#dependency-injection)
 - [Nested Operations (Operation Composition)](#nested-operations-operation-composition)
+- [Plugin System](#plugin-system)
 - [Advanced Usage](#advanced-usage)
 - [License](#license)
 
@@ -584,6 +585,36 @@ end
 - **Transparent Error**: If the Parent has NOT defined that error type, the child's `Error` object is propagated exactly as is (including its already resolved message).
 
 The `call_operation` helper triggers the internal Halt mechanism, allowing parent step controls like `retry_if` to function as expected.
+
+## Plugin System
+
+NextStation features a modular **Plugin System** that allows extending core functionality without modifying the gem
+itself.
+
+### Using Plugins
+
+Enable plugins using the `plugin` macro:
+
+```ruby
+
+class CreateUser < NextStation::Operation
+  plugin :transactional
+
+  process do
+    step :validate_inputs
+    transaction do
+      step :create_user_record
+    end
+  end
+end
+```
+
+### Creating Plugins
+
+You can create your own plugins to add lifecycle hooks, DSL methods, and state helpers.
+
+For detailed information on how to design and build plugins, please refer to
+the [Plugin System Guide](PLUGIN_SYSTEM_GUIDE.md).
 
 ## Advanced Usage
 

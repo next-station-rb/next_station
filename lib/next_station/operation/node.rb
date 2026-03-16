@@ -25,6 +25,12 @@ module NextStation
         instance_eval(&block) if block_given?
       end
 
+      # Adds a child node.
+      # @param node [Node]
+      def add_child(node)
+        @children << node
+      end
+
       # Adds a step to the node.
       # @param name [Symbol] The method name to execute.
       # @param options [Hash] Execution options like :skip_if, :retry_if, :attempts, :delay.

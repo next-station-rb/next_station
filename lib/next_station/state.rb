@@ -19,11 +19,12 @@ module NextStation
 
     # @param params [Hash] Initial parameters.
     # @param context [Hash] Shared context (immutable).
-    def initialize(params = {}, context = {})
+    def initialize(params = {}, context = {}, plugins = [])
       @context = context.dup.freeze
       @data = { params: unwrap_params(params).dup }
       @step_attempt = 1
       @current_step = nil
+      extend_with_plugins(plugins)
     end
 
     # Sets the current attempt number for the active step.
@@ -51,6 +52,12 @@ module NextStation
         params[:params]
       else
         params
+      end
+    end
+
+    def extend_with_plugins(plugins)
+      plugins.each do |mod|
+        extend mod::State if mod.const_defined?(:State)
       end
     end
   end
