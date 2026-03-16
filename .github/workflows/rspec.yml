@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ["3.0", "3.4", "head", "jruby-9.4", "jruby-head"]
+        ruby: [ "3.0", "3.2", "3.4", "3.5, "head", "jruby-head" ]
 
     steps:
     - uses: actions/checkout@v4

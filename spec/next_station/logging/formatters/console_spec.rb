@@ -37,7 +37,7 @@ RSpec.describe NextStation::Logging::Formatter::Console do
       it 'includes payload when present and not empty' do
         msg = msg_hash.merge(payload: { user_id: 123 })
         result = formatter.call(severity, datetime, progname, msg)
-        expect(result).to include('{user_id: 123}')
+        expect(result).to include('{user_id: 123}').or include('{:user_id=>123}')
       end
 
       it 'does not include empty payload' do
