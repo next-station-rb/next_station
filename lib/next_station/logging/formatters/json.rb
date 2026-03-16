@@ -34,9 +34,10 @@ module NextStation
             time: time.utc.strftime('%Y-%m-%dT%H:%M:%S.%6N'),
             pid: Process.pid,
             origin: build_origin(data),
-            message: data[:message],
-            payload: data[:payload]
+            message: data[:message]
           }
+
+          add_payload_to_log_entry(log_entry, data) if data[:payload]
 
           add_otel_context(log_entry) if OTEL_AVAILABLE
 
@@ -45,6 +46,13 @@ module NextStation
         end
 
         private
+
+        # Adds the payload to the log entry if it is not empty.
+        def add_payload_to_log_entry(log_entry, data)
+          return unless data[:payload]
+
+          log_entry[:payload] = data[:payload] unless data[:payload].empty?
+        end
 
         # Constructs the origin hash, returning nil if no origin data is present.
         # This prevents an empty "origin": {} from appearing in the logs.

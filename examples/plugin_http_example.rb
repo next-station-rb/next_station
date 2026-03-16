@@ -66,7 +66,7 @@ class FetchExamplePage < NextStation::Operation
   end
 
   def call_api(state)
-    publish_log :info, "Calling API: #{self.class.config.http_client.base_url}"
+    publish_log :info, "Calling API with: #{self.class.config.http_client.base_url}"
     response = http_get("/")
     state[:response] = response
     state
