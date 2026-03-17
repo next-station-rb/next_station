@@ -32,7 +32,9 @@ class UserOnboarding < NextStation::Operation
 
   # Step 2: Send a welcome email
   def send_welcome_email(state)
-    EmailSender.send(state.params[:email])
+    # ... custom logic to email sender, for example, EmailSender.send(state.params[:email])
+
+    publish_log :info, "Welcome email sent"
     state
   end
 
@@ -43,16 +45,27 @@ class UserOnboarding < NextStation::Operation
   end
 end
 
-# Case 1: Successful Onboarding (Valid email), all 3 steps executed and the state[:result] set as value
+puts "Case 1: Successful Onboarding (Valid email), all 3 steps executed and the state[:result] set as value"
+puts "\n"
 operation = UserOnboarding.new.call(email: "alice@example.com")
 operation.success? # => true
 operation.value # => { status: "onboarded", email: "alice@example.com" }
+puts "\n"
+puts "Result: #{operation.value}"
+puts "------------------------------------"
 
-
-# Case 2: Invalid Email Failure, step 1 fail and the error is:invalid_email is returned instead of a result
+# Case 2: Invalid Email Failure, step 1 fail and the error is invalid_email
 # no further steps are executed
+puts "Case 2: Invalid Email Failure, step 1 fail and the error is :invalid_email"
+puts "\n"
 operation = UserOnboarding.new.call(email: "bobexample.com")
 operation.success? # => false
 operation.failure? # => true
 operation.error.type # => :invalid_email
 operation.error.message # => "Email is invalid. It must contain '@'."
+
+puts "\n"
+puts "Success? #{operation.success?}"
+puts "Error Type: #{operation.error.type}"
+puts "Error Message: #{operation.error.message}"
+puts "------------------------------------"
