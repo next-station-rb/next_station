@@ -37,8 +37,8 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'rubocop'
-  spec.add_development_dependency 'debase'
-  spec.add_development_dependency 'ruby-debug-ide'
+  spec.add_development_dependency 'debase' unless ENV['SKIP_DEBASE_GEM']
+  spec.add_development_dependency 'ruby-debug-ide' unless ENV['SKIP_RUBY_DEBUG_IDE_GEM']
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
