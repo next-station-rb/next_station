@@ -77,8 +77,8 @@ class UserOnboarding < NextStation::Operation
     EmailSender.send(state.params[:email])
 
     # NextStation Also have a custom logger. Outputs to plaintext in Development and to JSON in Production.
-    publish_log :info, "Welcome email sent",
-                state
+    publish_log :info, "Welcome email sent"
+    state
   end
 
   # Step 3: Finalize onboarding and set result
