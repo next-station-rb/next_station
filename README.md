@@ -35,44 +35,71 @@ Or install it yourself as:
 
 ## Getting Started
 
-Define an operation by inheriting from `NextStation::Operation` and using the `process` block. You can use `result_at` to specify which key from the state should be returned as the result value:
+Define an operation by inheriting from `NextStation::Operation` and using the `process` block.
+You can use `result_at` to specify which key from the state should be returned as the result value
 
 ```ruby
-class CreateUser < NextStation::Operation
-  result_at :user_id
+require 'next_station'
 
+class UserOnboarding < NextStation::Operation
+  # Define custom errors for this operation
+  errors do
+    error_type :invalid_email do
+      # Error can be in multiple languages, using just English for now.
+      message en: "Email is invalid. It must contain '@'."
+    end
+  end
+
+  # Define the steps of the operation
+  # this is the core of the Railway pattern
+  # Steps are executed in the order they are defined
   process do
-    step :validate_params
-    step :persist_user
+    step :validate_email
     step :send_welcome_email
+    step :finalize_onboarding
   end
+  # The state[:result] will contain the value of the operation in case of success
+  result_at :result
 
-  def validate_params(state)
-    raise "Invalid email" unless state.params[:email].include?("@")
+  # Step 1: Validate email presence of "@"
+  def validate_email(state)
+    email = state.params[:email]
+    unless email.to_s.include?("@")
+      error!(type: :invalid_email) # here we invoke the custom error defined above
+    end
     state
   end
 
-  def persist_user(state)
-    # state[:params] contains the initial input
-    user = User.create(state.params)
-    state[:user_id] = user.id
-    state
-  end
-
+  # Step 2: Send a welcome email
   def send_welcome_email(state)
-    # Logic to send email
+    # We can invoke any external service, 
+    # ... as a pro tip, we also support Dependency Injection as shown in the "advanced" section of the docs.
+    EmailSender.send(state.params[:email])
+
+    # NextStation Also have a custom logger. Outputs to plaintext in Development and to JSON in Production.
+    publish_log :info, "Welcome email sent",
+                state
+  end
+
+  # Step 3: Finalize onboarding and set result
+  def finalize_onboarding(state)
+    state[:result] = { status: "onboarded", email: state.params[:email] }
     state
   end
 end
 
-# Usage
-result = CreateUser.new.call(email: "user@example.com", name: "John Doe")
+# Case 1: Successful Onboarding (Valid email), all 3 steps executed and the state[:result] set as value
+operation = UserOnboarding.new.call(email: "alice@example.com")
+operation.success? # => true
+operation.value # => { status: "onboarded", email: "alice@example.com" }
 
-if result.success?
-  puts "User created with ID: #{result.value}"
-else
-  puts "Error: #{result.error.message}"
-end
+# Case 2: Invalid Email Failure, step 1 fail and the error is:invalid_email is returned instead of a result
+# no further steps are executed
+operation = UserOnboarding.new.call(email: "bobexample.com")
+operation.success? # => false
+operation.failure? # => true
+operation.error.type # => :invalid_email
+operation.error.message # => "Email is invalid. It must contain '@'."
 ```
 
 ## Core Concepts
