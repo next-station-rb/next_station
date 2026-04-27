@@ -25,14 +25,17 @@ module NextStation
         # @param event [Dry::Monitor::Event]
         def on_stop(event)
           result_status = event[:result].success? ? 'success' : 'failure'
-          
+          result_error_type = event[:result].error&.type if event[:result].failure?
+
+          payload = {}
+          payload[:duration] = event[:duration]
+          payload[:result] = result_status
+          payload[:error_type] = result_error_type.to_s if result_error_type
+
           log_event(event, extra_data: {
             message: "completed operation: #{event[:operation]} with #{result_status}",
             event_kind: 'operation.stop',
-            payload: {
-              duration: event[:duration],
-              result: result_status
-            }
+            payload: payload
           })
         end
       end

@@ -74,7 +74,9 @@ class UserOnboarding < NextStation::Operation
   def send_welcome_email(state)
     # We can invoke any external service, 
     # ... as a pro tip, we also support Dependency Injection as shown in the "advanced" section of the docs.
-    EmailSender.send(state.params[:email])
+    email = EmailSender.send(state.params[:email])
+    # We can also store the email ID in the state for later use.
+    state[:email_id] = email.id
 
     # NextStation Also have a custom logger. Outputs to plaintext in Development and to JSON in Production.
     publish_log :info, "Welcome email sent"
@@ -83,7 +85,10 @@ class UserOnboarding < NextStation::Operation
 
   # Step 3: Finalize onboarding and set result
   def finalize_onboarding(state)
-    state[:result] = { status: "onboarded", email: state.params[:email] }
+    # Creating the result when the operation is successful.
+    # note that we can read the state[:email_id] from the previous step.
+    # and the state.params from the initial input.
+    state[:result] = { status: "onboarded", email: state.params[:email], message_id: state[:email_id] }
     state
   end
 end
@@ -91,7 +96,7 @@ end
 # Case 1: Successful Onboarding (Valid email), all 3 steps executed and the state[:result] set as value
 operation = UserOnboarding.new.call(email: "alice@example.com")
 operation.success? # => true
-operation.value # => { status: "onboarded", email: "alice@example.com" }
+operation.value # => { status: "onboarded", email: "alice@example.com", message_id: 12345 }
 
 # Case 2: Invalid Email Failure, step 1 fail and the error is:invalid_email is returned instead of a result
 # no further steps are executed
@@ -101,6 +106,11 @@ operation.failure? # => true
 operation.error.type # => :invalid_email
 operation.error.message # => "Email is invalid. It must contain '@'."
 ```
+
+The operation return either a `Success` or `Failure` result.
+
+* When success, the `.value` will contain the `state[:result]` of the operation.
+* When failure, the `.error` will contain the error `type`, `message` and (optional) `details`.
 
 ## Core Concepts
 
@@ -114,13 +124,42 @@ Every operation execution revolves around a `State` object. It holds:
 
 Steps always receive the `state` as their only argument and MUST return it. If a step returns something else (or `nil`), a `NextStation::StepReturnValueError` will be raised.
 
-Inside a step, you can access params in two ways:
+Inside a step, you can access params and data using `state.params`:
 ```ruby
-state.params[:email]  # Recommended
-state[:params][:email] # Also valid
+
+class ExampleOperation < NextStation::Operation
+  # ...
+  def step_1(state)
+    # Access params (in this case, is mail@example.com)
+    email = state.params[:email]
+    state
+  end
+
+  # ...
+end
+
+op = ExampleOperation.new.call(email: "mail@example.com")
 ```
 
-Direct access to params via top-level state keys (e.g., `state[:email]`) is NOT supported to avoid confusion between initial input and operation data.
+You can also add custom data to the state using `state[:key] = value`. This is useful for passing data between steps.
+
+```ruby
+
+class ExampleOperation < NextStation::Operation
+  # ...
+  def step_1(state)
+    state[:user_id] = 123
+    state
+  end
+
+  def step_2(state)
+    # Access the user_id from the previous step
+    user_id = state[:user_id]
+    state
+  end
+end
+
+```
 
 ### Result
 

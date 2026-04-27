@@ -113,3 +113,4 @@ http-client.private.env.json
 .idea/**/copilot.data.migration.*.xml
 
 .DS_Store
+/Test Results - All_specs_in_spec__next_station.html
